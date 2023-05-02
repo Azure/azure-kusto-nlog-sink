@@ -7,6 +7,8 @@ namespace NLog.Azure.Kusto
 {
     public class ADXSinkOptions
     {
+        private const string AppName = "NLog.Azure.Kusto";
+        private const string ClientVersion = "0.0.1";
         /// <summary>
         /// Azure Data Explorer endpoint (Ingestion endpoint for Queued Ingestion, Query endpoint for Streaming Ingestion)
         /// </summary>
@@ -115,6 +117,9 @@ namespace NLog.Azure.Kusto
                         break;
                     }
             }
+            kcsb.ApplicationNameForTracing = AppName;
+            kcsb.ClientVersionForTracing = ClientVersion;
+            kcsb.SetConnectorDetails(AppName, ClientVersion, "Nlog", "5.1.4");
             return kcsb;
         }
 

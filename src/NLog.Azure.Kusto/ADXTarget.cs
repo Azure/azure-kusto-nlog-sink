@@ -11,6 +11,8 @@ using Kusto.Data.Common;
 using System.Linq;
 using NLog.Config;
 using System.Diagnostics;
+using NLog.Common;
+using Kusto.Cloud.Platform.Utils;
 
 namespace NLog.Azure.Kusto
 {
@@ -18,7 +20,6 @@ namespace NLog.Azure.Kusto
     public class ADXTarget : TargetWithLayout
     {
         ADXSinkOptions options;
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
         private IKustoIngestClient m_ingestClient;
         private IngestionMapping m_ingestionMapping;
         private bool m_disposed;
@@ -234,11 +235,12 @@ namespace NLog.Azure.Kusto
                 }
                 if (ingestionStatus.Status == Status.Failed)
                 {
-                    logger.Error("Kusto log ingestion failed for record: {0} with ActivityId {1}, Error Code: {2}", sourceId, ingestionStatus.ActivityId, ingestionStatus.ErrorCode);
+                    // to see internalLogger logs, set the log level to Debug in the NLog.config file. ref: https://github.com/nlog/nlog/wiki/Internal-logging
+                    InternalLogger.Error("Kusto log ingestion failed for record: {0} with ActivityId {1}, Error Code: {2}", sourceId, ingestionStatus.ActivityId, ingestionStatus.ErrorCode);
                 }
                 else if (ingestionStatus.Status == Status.Succeeded)
                 {
-                    logger.Debug("ADX sink: Ingestion succeeded for record {0}, with ActivityId {1} ", sourceId, ingestionStatus.ActivityId);
+                    InternalLogger.Debug("ADX sink: Ingestion succeeded for record {0}, with ActivityId {1} ", sourceId, ingestionStatus.ActivityId);
                 }
             }
         }
