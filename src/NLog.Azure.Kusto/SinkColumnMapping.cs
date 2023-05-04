@@ -1,9 +1,11 @@
 ﻿namespace NLog.Azure.Kusto
 {
-    public struct SinkColumnMapping
+    public class SinkColumnMapping
     {
-        public string ColumnName { get; set; }
-        public string ColumnType { get; set; }
-        public string ValuePath { get; set; }
+        public string ColumnName { get; set; } = string.Empty;
+        public string ColumnType { get; set; } = string.Empty;
+        public string ValuePath { get; set; } = string.Empty;
+
+        public SinkColumnMapping() { }
     }
 }

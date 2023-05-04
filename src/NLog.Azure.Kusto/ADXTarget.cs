@@ -110,7 +110,29 @@ namespace NLog.Azure.Kusto
         public string ManagedIdentityClientId { get; set; }
         public string FlushImmediately { get; set; } = "false";
         public string MappingNameRef { get; set; }
-        public string ColumnsMapping { get; set; }
+
+        //public string ColumnMappings { get; set; }
+
+        [ArrayParameter(typeof(SinkColumnMapping), "columnMapping")]
+        public IList<SinkColumnMapping> ColumnMappings
+        {
+            get; set;
+            //get { return null; }
+            //set
+            //{
+            //    if (value != null)
+            //    {
+            //        {
+            //            options.ColumnsMapping = value.Select(x => new SinkColumnMapping
+            //            {
+            //                ColumnName = x.ColumnName,
+            //                ColumnType = x.ColumnType,
+            //                ValuePath = x.ValuePath
+            //            }).ToList();
+            //        }
+            //    }
+            //}
+        }
         public string IngestionTimout { get; set; }
 
         protected override void InitializeTarget()
@@ -125,7 +147,8 @@ namespace NLog.Azure.Kusto
                 UseStreamingIngestion = bool.Parse(RenderLogEvent(UseStreamingIngestion, defaultLogEvent)),
                 AuthenticationMode = ADXSinkOptions.AuthenticationModeMap.GetValueOrDefault(RenderLogEvent(AuthenticationMode, defaultLogEvent)),
                 MappingName = RenderLogEvent(MappingNameRef, defaultLogEvent),
-                ColumnsMapping = !string.IsNullOrEmpty(ColumnsMapping) ? JsonSerializer.Deserialize<SinkColumnMapping[]>(RenderLogEvent(ColumnsMapping, defaultLogEvent)) : null,
+                //ColumnsMapping = !string.IsNullOrEmpty(ColumnsMapping) ? JsonSerializer.Deserialize<SinkColumnMapping[]>(RenderLogEvent(ColumnsMapping, defaultLogEvent)) : null,
+                ColumnsMapping = ColumnMappings != null ? ColumnMappings: null,
                 FlushImmediately = bool.Parse(RenderLogEvent(FlushImmediately, defaultLogEvent)),
             };
             setupAuthCredentials(options, defaultLogEvent);
