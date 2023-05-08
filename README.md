@@ -7,10 +7,10 @@ An Azure Data Explorer(ADX) custom target that writes log events to an [Azure Da
 
 ## Getting started
 
-Install from [NuGet](https://nuget.org/packages/serilog.sinks.azuredataexplorer):
+Install from [NuGet]():
 
 ```powershell
-Install-Package Serilog.Sinks.AzureDataExplorer
+Install-Package NLog.Azure.Kusto
 ```
 
 ## Configuration
