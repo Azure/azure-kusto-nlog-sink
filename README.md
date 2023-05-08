@@ -68,7 +68,7 @@ By default, the sink uses the following data mapping:
 | Timestamp   | datetime    | $.Timestamp  |
 | Level       | string      | $.Level      |
 | Message     | string      | $.Message    |
-| FormattedMessage     | string      | $.FormattedMessage    |
+| FormattedMessage     | dynamic      | $.FormattedMessage    |
 | Exception   | string      | $.Exception  |
 | Properties  | dynamic     | $.Properties |
 

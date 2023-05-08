@@ -35,11 +35,6 @@ namespace NLog.Azure.Kusto
         public string MappingName { get; set; }
 
         /// <summary>
-        /// The explicit columns mapping to use for the ingested data
-        /// </summary>
-        public IEnumerable<SinkColumnMapping> ColumnsMapping { get; set; }
-
-        /// <summary>
         /// This property determines whether it is needed to flush the data immediately to ADX cluster,
         /// The default is false.
         /// </summary>

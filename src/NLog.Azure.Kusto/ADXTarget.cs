@@ -26,76 +26,7 @@ namespace NLog.Azure.Kusto
         private bool m_streamingIngestion;
         private int m_ingestionTimeout = 0; //seconds
         private static readonly RecyclableMemoryStreamManager SRecyclableMemoryStreamManager = new RecyclableMemoryStreamManager();
-        private static readonly List<ColumnMapping> DefaultIngestionColumnMapping = new List<ColumnMapping>
-        {
-            new ColumnMapping
-            {
-                ColumnName = "Timestamp",
-                ColumnType = "datetime",
-                Properties = new Dictionary<string, string>
-                {
-                    {
-                        MappingConsts.Path, "$.Timestamp"
-                    }
-                }
-            },
-            new ColumnMapping
-            {
-                ColumnName = "Level",
-                ColumnType = "string",
-                Properties = new Dictionary<string, string>
-                {
-                    {
-                        MappingConsts.Path, "$.Level"
-                    }
-                }
-            },
-            new ColumnMapping
-            {
-                ColumnName = "Message",
-                ColumnType = "string",
-                Properties = new Dictionary<string, string>
-                {
-                    {
-                        MappingConsts.Path, "$.Message"
-                    }
-                }
-            },
-            new ColumnMapping
-            {
-                ColumnName = "FormattedMessage",
-                ColumnType = "string",
-                Properties = new Dictionary<string, string>
-                {
-                    {
-                        MappingConsts.Path, "$.FormattedMessage"
-                    }
-                }
-            },
-            new ColumnMapping
-            {
-                ColumnName = "Exception",
-                ColumnType = "string",
-                Properties = new Dictionary<string, string>
-                {
-                    {
-                        MappingConsts.Path, "$.Exception"
-                    }
-                }
-            },
-                        new ColumnMapping
-            {
-                ColumnName = "Properties",
-                ColumnType = "dynamic",
-                Properties = new Dictionary<string, string>
-                {
-                    {
-                        MappingConsts.Path, "$.Properties"
-                    }
-                }
-            }
-        };
-
+        
         [RequiredParameter]
         public string Database { get; set; }
         [RequiredParameter]
@@ -111,28 +42,7 @@ namespace NLog.Azure.Kusto
         public string FlushImmediately { get; set; } = "false";
         public string MappingNameRef { get; set; }
 
-        //public string ColumnMappings { get; set; }
-
-        [ArrayParameter(typeof(SinkColumnMapping), "columnMapping")]
-        public IList<SinkColumnMapping> ColumnMappings
-        {
-            get; set;
-            //get { return null; }
-            //set
-            //{
-            //    if (value != null)
-            //    {
-            //        {
-            //            options.ColumnsMapping = value.Select(x => new SinkColumnMapping
-            //            {
-            //                ColumnName = x.ColumnName,
-            //                ColumnType = x.ColumnType,
-            //                ValuePath = x.ValuePath
-            //            }).ToList();
-            //        }
-            //    }
-            //}
-        }
+     
         public string IngestionTimout { get; set; }
 
         protected override void InitializeTarget()
@@ -147,8 +57,6 @@ namespace NLog.Azure.Kusto
                 UseStreamingIngestion = bool.Parse(RenderLogEvent(UseStreamingIngestion, defaultLogEvent)),
                 AuthenticationMode = ADXSinkOptions.AuthenticationModeMap.GetValueOrDefault(RenderLogEvent(AuthenticationMode, defaultLogEvent)),
                 MappingName = RenderLogEvent(MappingNameRef, defaultLogEvent),
-                //ColumnsMapping = !string.IsNullOrEmpty(ColumnsMapping) ? JsonSerializer.Deserialize<SinkColumnMapping[]>(RenderLogEvent(ColumnsMapping, defaultLogEvent)) : null,
-                ColumnsMapping = ColumnMappings != null ? ColumnMappings: null,
                 FlushImmediately = bool.Parse(RenderLogEvent(FlushImmediately, defaultLogEvent)),
             };
             setupAuthCredentials(options, defaultLogEvent);
@@ -160,25 +68,6 @@ namespace NLog.Azure.Kusto
             {
                 m_ingestionMapping.IngestionMappingReference = options.MappingName;
             }
-            else if (options.ColumnsMapping?.Any() == true)
-            {
-                m_ingestionMapping.IngestionMappings = options.ColumnsMapping.Select(m => new ColumnMapping
-                {
-                    ColumnName = m.ColumnName,
-                    ColumnType = m.ColumnType,
-                    Properties = new Dictionary<string, string>(1)
-                    {
-                        {
-                            MappingConsts.Path, m.ValuePath
-                        }
-                    }
-                }).ToList();
-            }
-            else
-            {
-                m_ingestionMapping.IngestionMappings = DefaultIngestionColumnMapping;
-            }
-
 
             KustoConnectionStringBuilder dmkcsb = options.GetKustoConnectionStringBuilder(Constants.CONNECTION_STRING_TYPE.DATA_MANAGEMENT);
             KustoConnectionStringBuilder engineKcsb = options.GetKustoConnectionStringBuilder(Constants.CONNECTION_STRING_TYPE.DATA_ENGINE);

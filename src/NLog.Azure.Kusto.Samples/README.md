@@ -9,7 +9,7 @@ This guide will help you in setting up and configuring the Azure Data Explorer T
 - Create a table in Azure Data Explorer to store logs. Following command can be used to create a table with the name "ADXNLogSample".
 
 ```sql
-.create table ADXNLogSample (Timestamp:datetime, Level:string, Message:string, FormattedMessage:string, Exception:string, Properties:dynamic)
+.create table ADXNLogSample (Timestamp:datetime, Level:string, Message:string, FormattedMessage:dynamic, Exception:string, Properties:dynamic)
 ```
 
 - Clone the NLog-ADX Target git repo
