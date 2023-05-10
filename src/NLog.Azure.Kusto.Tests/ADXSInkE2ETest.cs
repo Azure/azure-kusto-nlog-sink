@@ -14,7 +14,7 @@ namespace NLog.Azure.Kusto.Tests
 
         public ADXSInkE2ETest()
         {
-            Assert.NotNull(Environment.GetEnvironmentVariable("CLUSTER_URI") ?? throw new ArgumentNullException("CLUSTER_URI not set"));
+            Assert.NotNull(Environment.GetEnvironmentVariable("INGEST_ENDPOINT") ?? throw new ArgumentNullException("INGEST_ENDPOINT not set"));
             Assert.NotNull(Environment.GetEnvironmentVariable("DATABASE") ?? throw new ArgumentNullException("DATABASE name not set"));
             Assert.NotNull(Environment.GetEnvironmentVariable("APP_ID") ?? throw new ArgumentNullException("APP_ID not set"));
             Assert.NotNull(Environment.GetEnvironmentVariable("AZURE_TENANT_ID") ?? throw new ArgumentNullException("AZURE_TENANT_ID not set"));
@@ -97,7 +97,7 @@ namespace NLog.Azure.Kusto.Tests
                     {
                         var target = new ADXTarget
                         {
-                            IngestionEndpointUri = Environment.GetEnvironmentVariable("CLUSTER_URI") ?? throw new ArgumentNullException("CLUSTER_URI not set"),
+                            IngestionEndpointUri = Environment.GetEnvironmentVariable("INGEST_ENDPOINT") ?? throw new ArgumentNullException("INGEST_ENDPOINT not set"),
                             Database = Environment.GetEnvironmentVariable("DATABASE") ?? throw new ArgumentNullException("DATABASE name not set"),
                             ApplicationClientId = Environment.GetEnvironmentVariable("APP_ID") ?? throw new ArgumentNullException("APP_ID not set"),
                             Authority = Environment.GetEnvironmentVariable("AZURE_TENANT_ID") ?? throw new ArgumentNullException("AZURE_TENANT_ID not set"),
@@ -117,7 +117,7 @@ namespace NLog.Azure.Kusto.Tests
                     {
                         var target = new ADXTarget
                         {
-                            IngestionEndpointUri = Environment.GetEnvironmentVariable("CLUSTER_URI") ?? throw new ArgumentNullException("CLUSTER_URI not set"),
+                            IngestionEndpointUri = Environment.GetEnvironmentVariable("INGEST_ENDPOINT") ?? throw new ArgumentNullException("INGEST_ENDPOINT not set"),
                             Database = Environment.GetEnvironmentVariable("DATABASE") ?? throw new ArgumentNullException("DATABASE name not set"),
                             ApplicationClientId = Environment.GetEnvironmentVariable("APP_ID") ?? throw new ArgumentNullException("APP_ID not set"),
                             Authority = Environment.GetEnvironmentVariable("AZURE_TENANT_ID") ?? throw new ArgumentNullException("AZURE_TENANT_ID not set"),
@@ -146,7 +146,7 @@ namespace NLog.Azure.Kusto.Tests
                 case "Test_ADXNTargetBatched":
                     {
                         return new KustoConnectionStringBuilder(ADXSinkOptions.GetClusterUrl(
-             Environment.GetEnvironmentVariable("CLUSTER_URI")),
+             Environment.GetEnvironmentVariable("INGEST_ENDPOINT")),
          Environment.GetEnvironmentVariable("DATABASE"))
      .WithAadApplicationKeyAuthentication(Environment.GetEnvironmentVariable("APP_ID"),
          Environment.GetEnvironmentVariable("APP_KEY"), Environment.GetEnvironmentVariable("AZURE_TENANT_ID"));
@@ -156,7 +156,7 @@ namespace NLog.Azure.Kusto.Tests
                 case "Test_ADXTargetStreamed":
                     {
                         return new KustoConnectionStringBuilder(
-             Environment.GetEnvironmentVariable("CLUSTER_URI"),
+             Environment.GetEnvironmentVariable("INGEST_ENDPOINT"),
          Environment.GetEnvironmentVariable("DATABASE"))
      .WithAadApplicationKeyAuthentication(Environment.GetEnvironmentVariable("APP_ID"),
          Environment.GetEnvironmentVariable("APP_KEY"), Environment.GetEnvironmentVariable("AZURE_TENANT_ID"));
