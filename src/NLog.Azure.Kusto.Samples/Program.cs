@@ -19,6 +19,7 @@
                 for (int i = 0; i < 5; i++)
                 {
                     logger.Info("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
+                    logger.Warn("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
                 }
                 throw new Exception("Custom EXCEPTION raised");
 
@@ -28,6 +29,7 @@
                 logger.Error(e, "This was exception");
                 Thread.Sleep(10000);
             }
+            Console.WriteLine("Sent !!!");
         }
     }
 }

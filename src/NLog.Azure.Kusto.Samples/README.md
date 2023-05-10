@@ -9,12 +9,12 @@ This guide will help you in setting up and configuring the Azure Data Explorer T
 - Create a table in Azure Data Explorer to store logs. Following command can be used to create a table with the name "ADXNLogSample".
 
 ```sql
-.create table ADXNLogSample (Timestamp:datetime, Level:string, Message:string, FormattedMessage:string, Exception:string, Properties:dynamic)
+.create table ADXNLogSample (Timestamp:datetime, Level:string, Message:string, FormattedMessage:dynamic, Exception:string, Properties:dynamic)
 ```
 
 - Clone the NLog-ADX Target git repo
 - Set the following environment variables in the sample application:
-  - CLUSTER_URI : Ingest URL of ADX cluster created. Eg: `https://ingest-<clustername>.<region>.kusto.windows.net`
+  - INGEST_ENDPOINT : Ingest URL of ADX cluster created. Eg: `https://ingest-<clustername>.<region>.kusto.windows.net`
   - DATABASE : The name of the database to which data should be ingested into.
   - APP_ID : Application Client ID required for authentication.
   - APP_KEY : Application key required for authentication.
@@ -42,6 +42,12 @@ Open the configuration file and replace the existing target configuration one wi
   ApplicationKey="<AAD App key>"
   Authority="<AAD tenant id>"
 />
+
+##Rules
+<rules>
+  <logger name="*" minlevel="Info" writeTo="adxtarget" />
+ </rules>
+
 ```
 
 ## Step 2: Build the application and run it
