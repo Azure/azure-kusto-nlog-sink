@@ -63,7 +63,6 @@ namespace NLog.Azure.Kusto.Tests
             Logger logger = getCustomLogger(testType);
             for(int i=0; i<numberOfLogs; i++)
             {
-                Console.WriteLine("_---------------------HEREEEEEEE");
                 logger.Info("{type} Processed Info log {i}", testType, i);
                 logger.Debug("{type} Processed debug Log {i}", testType, i);
                 logger.Error(new Exception("{"+testType+"} : This is E2E Exception."));
