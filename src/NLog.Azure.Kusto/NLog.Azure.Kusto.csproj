@@ -10,30 +10,24 @@
     <Reference Include="System.ServiceModel.Web" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Azure.Data.Tables" Version="12.8.0" />
-    <PackageReference Include="Azure.Identity" Version="1.8.2" />
-    <PackageReference Include="Azure.Storage.Blobs" Version="12.16.0" />
-    <PackageReference Include="Azure.Storage.Queues" Version="12.14.0" />
-    <PackageReference Include="Microsoft.Azure.Kusto.Data" Version="11.3.1" />
-    <PackageReference Include="Microsoft.Azure.Kusto.Ingest" Version="11.3.1" />
-    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="Microsoft.Identity.Client.Extensions.Msal" Version="2.29.0" />
-    <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="2.3.2" />
-    <PackageReference Include="NLog" Version="5.1.4" />
-    <PackageReference Include="System.Collections.Immutable" Version="7.0.0" />
-    <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
-    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="7.0.2" />
-    <PackageReference Include="System.IO.Hashing" Version="7.0.0" />
-    <PackageReference Include="System.Memory.Data" Version="7.0.0" />
-    <PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
-    <PackageReference Include="System.Runtime" Version="4.3.1" />
-    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.1" />
-    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="7.0.1" />
-    <PackageReference Include="System.Security.Cryptography.X509Certificates" Version="4.3.2" />
-    <PackageReference Include="System.ServiceModel.Federation" Version="4.10.2" />
-    <PackageReference Include="Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers" Version="0.4.421302">
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="System.Text.Json" Version="7.0.2" />
+    <PackageReference Include="Azure.Data.Tables"  />
+    <PackageReference Include="Microsoft.Azure.Kusto.Data"  />
+    <PackageReference Include="Microsoft.Azure.Kusto.Ingest" />
+    <PackageReference Include="Microsoft.CSharp" />
+    <PackageReference Include="Microsoft.Identity.Client.Extensions.Msal" />
+    <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" />
+    <PackageReference Include="NLog" />
+    <PackageReference Include="System.Collections.Immutable" />
+    <PackageReference Include="System.Data.DataSetExtensions" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" />
+    <PackageReference Include="System.IO.Hashing" />
+    <PackageReference Include="System.Memory.Data" />
+    <PackageReference Include="System.Reflection.Emit" />
+    <PackageReference Include="System.Runtime" />
+    <PackageReference Include="System.Security.Cryptography.Algorithms" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" />
+    <PackageReference Include="System.Security.Cryptography.X509Certificates" />
+    <PackageReference Include="System.ServiceModel.Federation" />
+    <PackageReference Include="System.Text.Json" />
   </ItemGroup>
 </Project>

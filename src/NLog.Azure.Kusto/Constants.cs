@@ -13,7 +13,7 @@
         public static class AUTHENTICATION_TYPES
         {
             public const string AadApplicationKey = "AadApplicationKey";
-            public const string ManagedIdentity = "AadManagedIdentity";
+            public const string ManagedIdentity = "ManagedIdentity";
         }
     }
 }

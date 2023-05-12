@@ -96,3 +96,34 @@ The `authentication_method_name` can be replaced with the following supported au
     * This authentication mode can be of two types System Assigned Managed Identity and User Assigned Managed Identity. In case of User Assigned Managed Identity, it requires the following properties to be set in the nlog target configuration:
         * `ManagedIdentityClientId`
 
+### Running tests
+
+To run the tests locally, you need to have an ADX cluster created.
+
+1. Export environment variables for the following:
+
+    * For Windows:
+
+      ```powershell
+        $env:INGEST_ENDPOINT="<ingestionURI>"
+        $env:APP_ID="<appId>"
+        $env:APP_KEY="<appKey>"
+        $env:AZURE_TENANT_ID="<tenant>"
+        $env:DATABASE="<databaseName>"
+      ```
+
+    * For Mac/Linux:
+
+      ```bash
+        export INGEST_ENDPOINT="<ingestionURI>"
+        export APP_ID="<appId>"
+        export APP_KEY="<appKey>"
+        export AZURE_TENANT_ID="<tenant>"
+        export DATABASE="<databaseName>"
+      ```
+
+2. Run the tests using the following command:
+
+    ```bash
+      dotnet test
+    ```
