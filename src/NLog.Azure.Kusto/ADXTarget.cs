@@ -3,16 +3,11 @@ using Kusto.Ingest;
 using Kusto.Data;
 using NLog.Targets;
 using System.IO;
-using System.Collections.Generic;
 using Microsoft.IO;
 using System.IO.Compression;
 using System.Text.Json;
 using Kusto.Data.Common;
-using System.Linq;
 using NLog.Config;
-using System.Diagnostics;
-using NLog.Common;
-using Kusto.Cloud.Platform.Utils;
 
 namespace NLog.Azure.Kusto
 {
@@ -24,7 +19,7 @@ namespace NLog.Azure.Kusto
         private IngestionMapping m_ingestionMapping;
         private bool m_disposed;
         private bool m_streamingIngestion;
-        private int m_ingestionTimeout = 0; //seconds
+        private int m_ingestionTimeout; //seconds
         private static readonly RecyclableMemoryStreamManager SRecyclableMemoryStreamManager = new RecyclableMemoryStreamManager();
         
         [RequiredParameter]
@@ -55,10 +50,10 @@ namespace NLog.Azure.Kusto
                 IngestionEndpointUri = RenderLogEvent(IngestionEndpointUri, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(IngestionEndpointUri),
                 TableName = RenderLogEvent(TableName, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(TableName),
                 UseStreamingIngestion = bool.Parse(RenderLogEvent(UseStreamingIngestion, defaultLogEvent)),
-                AuthenticationMode = ADXSinkOptions.AuthenticationModeMap.GetValueOrDefault(RenderLogEvent(AuthenticationMode, defaultLogEvent)),
                 MappingName = RenderLogEvent(MappingNameRef, defaultLogEvent),
                 FlushImmediately = bool.Parse(RenderLogEvent(FlushImmediately, defaultLogEvent)),
             };
+
             setupAuthCredentials(options, defaultLogEvent);
             m_streamingIngestion = options.UseStreamingIngestion;
             m_ingestionMapping = new IngestionMapping();
@@ -80,20 +75,19 @@ namespace NLog.Azure.Kusto
 
         private void setupAuthCredentials(ADXSinkOptions options, LogEventInfo defaultLogEvent)
         {
-            switch (options.AuthenticationMode)
+            string appId = RenderLogEvent(ApplicationClientId, defaultLogEvent).NullIfEmpty();
+
+            if (appId != null)
             {
-                case Kusto.AuthenticationMode.AadApplicationKey:
-                    {
-                        options.ApplicationKey = RenderLogEvent(ApplicationKey, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(nameof(ApplicationKey));
-                        options.Authority = RenderLogEvent(Authority, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(nameof(Authority));
-                        options.ApplicationClientId = RenderLogEvent(ApplicationClientId, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(nameof(ApplicationClientId));
-                        break;
-                    }
-                case Kusto.AuthenticationMode.ManagedIdentity:
-                    {
-                        options.ManagedIdentityClientId = RenderLogEvent(ManagedIdentityClientId, defaultLogEvent).NullIfEmpty();
-                        break;
-                    }
+                options.ApplicationClientId = appId;
+                options.ApplicationKey = RenderLogEvent(ApplicationKey, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(nameof(ApplicationKey));
+                options.Authority = RenderLogEvent(Authority, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(nameof(Authority));
+                options.AuthenticationMode = Kusto.AuthenticationMode.AadApplicationKey;
+            }
+            else
+            {
+                options.ManagedIdentityClientId = RenderLogEvent(ManagedIdentityClientId, defaultLogEvent).NullIfEmpty();
+                options.AuthenticationMode = Kusto.AuthenticationMode.ManagedIdentity;
             }
         }
 
@@ -115,7 +109,6 @@ namespace NLog.Azure.Kusto
                     }, new StreamSourceOptions
                     {
                         SourceId = sourceId,
-                        LeaveOpen = false,
                         CompressionType = DataSourceCompressionType.GZip
                     }).ConfigureAwait(false);
                 }
@@ -130,29 +123,8 @@ namespace NLog.Azure.Kusto
                     }, new StreamSourceOptions
                     {
                         SourceId = sourceId,
-                        LeaveOpen = false,
                         CompressionType = DataSourceCompressionType.GZip
                     }).ConfigureAwait(false);
-                }
-                var ingestionStatus = result.GetIngestionStatusBySourceId(sourceId);
-                var stopWatch = Stopwatch.StartNew();
-                while (true)
-                {
-                    // check if the record is updated
-                    if (ingestionStatus.Status != Status.Pending ||
-                        m_ingestionTimeout != 0 && stopWatch.Elapsed.TotalSeconds > m_ingestionTimeout)
-                    {
-                        break; // the record is updated or timed out, exit the loop!
-                    }
-                }
-                if (ingestionStatus.Status == Status.Failed)
-                {
-                    // to see internalLogger logs, set the log level to Debug in the NLog.config file. ref: https://github.com/nlog/nlog/wiki/Internal-logging
-                    InternalLogger.Error("Kusto log ingestion failed for record: {0} with ActivityId {1}, Error Code: {2}", sourceId, ingestionStatus.ActivityId, ingestionStatus.ErrorCode);
-                }
-                else if (ingestionStatus.Status == Status.Succeeded)
-                {
-                    InternalLogger.Debug("ADX sink: Ingestion succeeded for record {0}, with ActivityId {1} ", sourceId, ingestionStatus.ActivityId);
                 }
             }
         }

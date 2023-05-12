@@ -1,0 +1,38 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <!--    add your PackageVersion nodes here -->
+    <PackageVersion Include="Xunit.SkippableFact" Version="1.4.13" />
+    <PackageVersion Include="Azure.Data.Tables" Version="12.8.0" />
+    <PackageVersion Include="Microsoft.Azure.Kusto.Data" Version="11.3.1" />
+    <PackageVersion Include="Microsoft.Azure.Kusto.Ingest" Version="11.3.1" />
+    <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageVersion Include="Microsoft.Identity.Client.Extensions.Msal" Version="2.29.0" />
+    <PackageVersion Include="Microsoft.IO.RecyclableMemoryStream" Version="2.3.2" />
+    <PackageVersion Include="NLog" Version="5.1.4" />
+    <PackageVersion Include="System.Collections.Immutable" Version="7.0.0" />
+    <PackageVersion Include="System.Data.DataSetExtensions" Version="4.5.0" />
+    <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="7.0.2" />
+    <PackageVersion Include="System.IO.Hashing" Version="7.0.0" />
+    <PackageVersion Include="System.Memory.Data" Version="7.0.0" />
+    <PackageVersion Include="System.Reflection.Emit" Version="4.7.0" />
+    <PackageVersion Include="System.Runtime" Version="4.3.1" />
+    <PackageVersion Include="System.Security.Cryptography.Algorithms" Version="4.3.1" />
+    <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="7.0.1" />
+    <PackageVersion Include="System.Security.Cryptography.X509Certificates" Version="4.3.2" />
+    <PackageVersion Include="System.ServiceModel.Federation" Version="4.10.2" />
+    <PackageVersion Include="System.Text.Json" Version="7.0.2" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
+    <PackageVersion Include="xunit" Version="2.4.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.4.5">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageVersion>
+    <PackageVersion Include="coverlet.collector" Version="3.2.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageVersion>
+  </ItemGroup>
+</Project>
