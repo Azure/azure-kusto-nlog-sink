@@ -40,7 +40,7 @@ namespace NLog.Azure.Kusto.Tests
                 var alterBatchingPolicy = CslCommandGenerator.GenerateTableAlterIngestionBatchingPolicyCommand(
                     Environment.GetEnvironmentVariable("DATABASE"), 
                     m_generatedTableName, 
-                    new IngestionBatchingPolicy(TimeSpan.FromSeconds(5), 10, 1024));
+                    new IngestionBatchingPolicy(TimeSpan.FromSeconds(1), 3, 1024));
 
                 var enableStreamingIngestion = CslCommandGenerator.GenerateTableAlterStreamingIngestionPolicyCommand(
                     m_generatedTableName, 
@@ -56,8 +56,8 @@ namespace NLog.Azure.Kusto.Tests
 
 
         [Theory]
-        [InlineData("Test_ADXTargetStreamed", 10, 30000)]
-        [InlineData("Test_ADXNTargetBatched", 10 , 30000)]
+        [InlineData("Test_ADXTargetStreamed", 10, 60000)]
+        [InlineData("Test_ADXNTargetBatched", 10 , 60000)]
         public async void Test_LogMessage(string testType, int numberOfLogs, int delayTime)
         {
             Logger logger = getCustomLogger(testType);
@@ -103,6 +103,7 @@ namespace NLog.Azure.Kusto.Tests
                             ApplicationKey = Environment.GetEnvironmentVariable("APP_KEY") ?? throw new ArgumentNullException("APP_KEY not set"),
                             TableName = m_generatedTableName,
                             UseStreamingIngestion = "false",
+                            FlushImmediately= "true",
                             AuthenticationMode = "AadApplicationKey"
                         };
                         var config = new LoggingConfiguration();

@@ -26,9 +26,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update=".runsettings">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="config\adxtargeterror.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
