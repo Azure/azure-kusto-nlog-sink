@@ -1,6 +1,7 @@
 ﻿using Kusto.Data;
 using Kusto.Data.Common;
 using Kusto.Data.Net.Client;
+using Kusto.Ingest;
 using NLog.Azure.Kusto;
 using NLog.Config;
 using Xunit;
@@ -11,6 +12,7 @@ namespace NLog.Azure.Kusto.Tests
     {
         private readonly string? m_generatedTableName;
         private readonly KustoConnectionStringBuilder? m_kustoConnectionStringBuilder;
+        private readonly KustoConnectionStringBuilder? m_kustoConnectionStringBuilderDM;
 
         public ADXSInkE2ETest()
         {
@@ -23,8 +25,12 @@ namespace NLog.Azure.Kusto.Tests
             var randomInt = new Random().Next();
             m_generatedTableName = "ADXNlogSink_" + randomInt;
             m_kustoConnectionStringBuilder = getConnectionStringBuilder("engine");
+            m_kustoConnectionStringBuilderDM = getConnectionStringBuilder("dm");
 
-            using (var kustoClient = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder))
+            if (m_kustoConnectionStringBuilder == null) throw new Exception("KustoConnectionStringBuilder cannot be created.");
+            if (m_kustoConnectionStringBuilderDM == null) throw new Exception("KustoConnectionStringBuilder DM cannot be created.");
+
+            using (ICslAdminProvider kustoClient = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder), kustoClientDM = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilderDM) )
             {
                 var command = CslCommandGenerator.GenerateTableCreateCommand(m_generatedTableName,
                 new[]
@@ -45,9 +51,12 @@ namespace NLog.Azure.Kusto.Tests
                 var enableStreamingIngestion = CslCommandGenerator.GenerateTableAlterStreamingIngestionPolicyCommand(
                     m_generatedTableName, 
                     true);
+
+                var refreshDmPolicies = CslCommandGenerator.GenerateDmRefreshPoliciesCommand();
                 
                 kustoClient.ExecuteControlCommand(Environment.GetEnvironmentVariable("DATABASE"), command);
                 kustoClient.ExecuteControlCommand(Environment.GetEnvironmentVariable("DATABASE"), alterBatchingPolicy);
+                kustoClientDM.ExecuteControlCommand(Environment.GetEnvironmentVariable("DATABASE"), ".refresh database '"+ Environment.GetEnvironmentVariable("DATABASE") + "' table '"+ m_generatedTableName + "' cache ingestionbatchingpolicy");
                 kustoClient.ExecuteControlCommand(Environment.GetEnvironmentVariable("DATABASE"), enableStreamingIngestion);
                 //Buffer to get commands executed
                 Thread.Sleep(50000);
@@ -56,11 +65,12 @@ namespace NLog.Azure.Kusto.Tests
 
 
         [Theory]
-        [InlineData("Test_ADXTargetStreamed", 10, 60000)]
-        [InlineData("Test_ADXNTargetBatched", 10 , 60000)]
+        [InlineData("Test_ADXTargetStreamed", 10, 1200000)]
+        [InlineData("Test_ADXNTargetBatched", 10 , 1200000)]
         public async void Test_LogMessage(string testType, int numberOfLogs, int delayTime)
         {
             Logger logger = getCustomLogger(testType);
+            if (logger == null) throw new Exception("Logger/Test type not supported");
             for(int i=0; i<numberOfLogs; i++)
             {
                 logger.Info("{type} Processed Info log {i}", testType, i);
@@ -135,7 +145,9 @@ namespace NLog.Azure.Kusto.Tests
                     }
 
             }
+#pragma warning disable CS8603 // Possible null reference return.
             return null;
+#pragma warning restore CS8603 // Possible null reference return.
         }
 
         private KustoConnectionStringBuilder getConnectionStringBuilder(string type)
@@ -163,12 +175,14 @@ namespace NLog.Azure.Kusto.Tests
 
                     }
             }
+#pragma warning disable CS8603 // Possible null reference return.
             return null;
+#pragma warning restore CS8603 // Possible null reference return.
         }
 
         public void Dispose()
         {
-            /*using (var queryProvider = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder))
+            using (var queryProvider = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder))
             {
                 var command = CslCommandGenerator.GenerateTableDropCommand(m_generatedTableName);
                 var clientRequestProperties = new ClientRequestProperties()
@@ -177,7 +191,7 @@ namespace NLog.Azure.Kusto.Tests
                 };
                 queryProvider.ExecuteControlCommand(Environment.GetEnvironmentVariable("DATABASE"), command,
                     clientRequestProperties);
-            }*/
+            }
         }
 
     }
