@@ -7,7 +7,7 @@ namespace NLog.Azure.Kusto.Tests
     {
         private static ADXTarget GetTarget(string configfile)
         {
-            LogManager.Configuration = new XmlLoggingConfiguration(Path.Combine("config", configfile + ".config"), true);
+            LogManager.LoadConfiguration(Path.Combine("config", configfile + ".config"));
             return LogManager.Configuration.AllTargets.OfType<ADXTarget>().First();
         }
 
