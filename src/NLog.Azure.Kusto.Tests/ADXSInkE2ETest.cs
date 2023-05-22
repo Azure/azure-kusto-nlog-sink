@@ -8,13 +8,13 @@ using Xunit;
 
 namespace NLog.Azure.Kusto.Tests
 {
-    public class ADXSInkE2ETest : IDisposable
+    public class ADXSinkE2ETest : IDisposable
     {
         private readonly string? m_generatedTableName;
         private readonly KustoConnectionStringBuilder? m_kustoConnectionStringBuilder;
         private readonly KustoConnectionStringBuilder? m_kustoConnectionStringBuilderDM;
 
-        public ADXSInkE2ETest()
+        public ADXSinkE2ETest()
         {
             Assert.NotNull(Environment.GetEnvironmentVariable("INGEST_ENDPOINT") ?? throw new ArgumentNullException("INGEST_ENDPOINT not set"));
             Assert.NotNull(Environment.GetEnvironmentVariable("DATABASE") ?? throw new ArgumentNullException("DATABASE name not set"));
@@ -24,8 +24,8 @@ namespace NLog.Azure.Kusto.Tests
 
             var randomInt = new Random().Next();
             m_generatedTableName = "ADXNlogSink_" + randomInt;
-            m_kustoConnectionStringBuilder = getConnectionStringBuilder("engine");
-            m_kustoConnectionStringBuilderDM = getConnectionStringBuilder("dm");
+            m_kustoConnectionStringBuilder = GetConnectionStringBuilder("engine");
+            m_kustoConnectionStringBuilderDM = GetConnectionStringBuilder("dm");
 
             if (m_kustoConnectionStringBuilder == null) throw new Exception("KustoConnectionStringBuilder cannot be created.");
             if (m_kustoConnectionStringBuilderDM == null) throw new Exception("KustoConnectionStringBuilder DM cannot be created.");
@@ -69,7 +69,7 @@ namespace NLog.Azure.Kusto.Tests
         [InlineData("Test_ADXNTargetBatched", 10, 120000)]
         public async void Test_LogMessage(string testType, int numberOfLogs, int delayTime)
         {
-            Logger logger = getCustomLogger(testType);
+            Logger logger = GetCustomLogger(testType);
             if (logger == null) throw new Exception("Logger/Test type not supported");
             for (int i = 0; i < numberOfLogs; i++)
             {
@@ -79,7 +79,7 @@ namespace NLog.Azure.Kusto.Tests
             }
             await Task.Delay(delayTime);
 
-            getConnectionStringBuilder(testType);
+            GetConnectionStringBuilder(testType);
             using (var kustoClient = KustoClientFactory.CreateCslQueryProvider(m_kustoConnectionStringBuilder))
             {
                 var reader = kustoClient.ExecuteQuery(m_generatedTableName + " | where Message contains \"" + testType + "\" | count; " +
@@ -98,7 +98,7 @@ namespace NLog.Azure.Kusto.Tests
             }
         }
 
-        private Logger getCustomLogger(string type)
+        private Logger GetCustomLogger(string type)
         {
             switch (type)
             {
@@ -113,8 +113,7 @@ namespace NLog.Azure.Kusto.Tests
                             ApplicationKey = Environment.GetEnvironmentVariable("APP_KEY") ?? throw new ArgumentNullException("APP_KEY not set"),
                             TableName = m_generatedTableName,
                             UseStreamingIngestion = "false",
-                            FlushImmediately = "true",
-                            AuthenticationMode = "AadApplicationKey"
+                            FlushImmediately = "true"
                         };
                         var config = new LoggingConfiguration();
                         config.AddTarget("adxtarget", target);
@@ -133,8 +132,7 @@ namespace NLog.Azure.Kusto.Tests
                             Authority = Environment.GetEnvironmentVariable("AZURE_TENANT_ID") ?? throw new ArgumentNullException("AZURE_TENANT_ID not set"),
                             ApplicationKey = Environment.GetEnvironmentVariable("APP_KEY") ?? throw new ArgumentNullException("APP_KEY not set"),
                             TableName = m_generatedTableName,
-                            UseStreamingIngestion = "true",
-                            AuthenticationMode = "AadApplicationKey"
+                            UseStreamingIngestion = "true"
                         };
                         var config = new LoggingConfiguration();
                         config.AddTarget("adxtarget", target);
@@ -150,7 +148,7 @@ namespace NLog.Azure.Kusto.Tests
 #pragma warning restore CS8603 // Possible null reference return.
         }
 
-        private KustoConnectionStringBuilder getConnectionStringBuilder(string type)
+        private KustoConnectionStringBuilder GetConnectionStringBuilder(string type)
         {
             switch (type)
             {
