@@ -118,7 +118,9 @@ namespace NLog.Azure.Kusto
                     TableName = options.TableName,
                     Format = DataSourceFormat.multijson,
                     IngestionMapping = m_ingestionMapping,
-                    FlushImmediately = options.FlushImmediately
+                    FlushImmediately = options.FlushImmediately,
+                    ReportLevel=IngestionReportLevel.FailuresAndSuccesses,
+                    ReportMethod=IngestionReportMethod.Table
                 }, new StreamSourceOptions
                 {
                     SourceId = sourceId,
