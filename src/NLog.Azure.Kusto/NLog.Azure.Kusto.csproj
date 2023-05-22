@@ -5,6 +5,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>nlog; nlog-sink; Azure Data Explorer; ADX; Kusto;kusto-nlog-target;</PackageTags>
+    <Title>Kusto NLog Sink</Title>
   </PropertyGroup>
   <ItemGroup>
     <None Include="..\..\README.md">
