@@ -348,3 +348,10 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+*.runsettings
+*packages
+*launchSettings.json
+src/UpgradeReport.sarif
+src/upgrade-assistant.clef
+src/AnalysisReport.sarif
