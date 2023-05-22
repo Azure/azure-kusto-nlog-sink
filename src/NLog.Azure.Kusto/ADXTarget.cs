@@ -21,7 +21,7 @@ namespace NLog.Azure.Kusto
         private bool m_streamingIngestion;
         private int m_ingestionTimeout; //seconds
         private static readonly RecyclableMemoryStreamManager SRecyclableMemoryStreamManager = new RecyclableMemoryStreamManager();
-        
+
         [RequiredParameter]
         public string Database { get; set; }
         [RequiredParameter]
@@ -37,7 +37,7 @@ namespace NLog.Azure.Kusto
         public string FlushImmediately { get; set; } = "false";
         public string MappingNameRef { get; set; }
 
-     
+
         public string IngestionTimout { get; set; }
 
         protected override void InitializeTarget()
@@ -54,7 +54,7 @@ namespace NLog.Azure.Kusto
                 FlushImmediately = bool.Parse(RenderLogEvent(FlushImmediately, defaultLogEvent)),
             };
 
-            setupAuthCredentials(options, defaultLogEvent);
+            SetupAuthCredentials(options, defaultLogEvent);
             m_streamingIngestion = options.UseStreamingIngestion;
             m_ingestionMapping = new IngestionMapping();
             m_ingestionTimeout = RenderLogEvent(IngestionTimout, defaultLogEvent) == "" ? 0 : int.Parse(RenderLogEvent(IngestionTimout, defaultLogEvent));
@@ -73,7 +73,7 @@ namespace NLog.Azure.Kusto
 
         }
 
-        private void setupAuthCredentials(ADXSinkOptions options, LogEventInfo defaultLogEvent)
+        private void SetupAuthCredentials(ADXSinkOptions options, LogEventInfo defaultLogEvent)
         {
             string appId = RenderLogEvent(ApplicationClientId, defaultLogEvent).NullIfEmpty();
 
@@ -93,39 +93,39 @@ namespace NLog.Azure.Kusto
 
         protected override async void Write(LogEventInfo logEvent)
         {
-
-            using (var datastream = CreateStreamFromLogEvents(ADXLogEvent.GetADXLogEvent(logEvent, RenderLogEvent(Layout, logEvent))))
+            using var datastream = CreateStreamFromLogEvents(ADXLogEvent.GetADXLogEvent(logEvent, RenderLogEvent(Layout, logEvent)));
+            var sourceId = Guid.NewGuid();
+            IKustoIngestionResult result;
+            if (m_streamingIngestion)
             {
-                var sourceId = Guid.NewGuid();
-                IKustoIngestionResult result;
-                if (m_streamingIngestion)
+                result = await m_ingestClient.IngestFromStreamAsync(datastream, new KustoIngestionProperties(options.DatabaseName, options.TableName)
                 {
-                    result = await m_ingestClient.IngestFromStreamAsync(datastream, new KustoIngestionProperties(options.DatabaseName, options.TableName)
-                    {
-                        DatabaseName = options.DatabaseName,
-                        TableName = options.TableName,
-                        Format = DataSourceFormat.multijson,
-                        IngestionMapping = m_ingestionMapping
-                    }, new StreamSourceOptions
-                    {
-                        SourceId = sourceId,
-                        CompressionType = DataSourceCompressionType.GZip
-                    }).ConfigureAwait(false);
-                }
-                else
+                    DatabaseName = options.DatabaseName,
+                    TableName = options.TableName,
+                    Format = DataSourceFormat.multijson,
+                    IngestionMapping = m_ingestionMapping
+                }, new StreamSourceOptions
                 {
-                    result = await m_ingestClient.IngestFromStreamAsync(datastream, new KustoQueuedIngestionProperties(options.DatabaseName, options.TableName)
-                    {
-                        DatabaseName = options.DatabaseName,
-                        TableName = options.TableName,
-                        Format = DataSourceFormat.multijson,
-                        IngestionMapping = m_ingestionMapping
-                    }, new StreamSourceOptions
-                    {
-                        SourceId = sourceId,
-                        CompressionType = DataSourceCompressionType.GZip
-                    }).ConfigureAwait(false);
-                }
+                    SourceId = sourceId,
+                    CompressionType = DataSourceCompressionType.GZip
+                }).ConfigureAwait(false);
+            }
+            else
+            {
+                result = await m_ingestClient.IngestFromStreamAsync(datastream, new KustoQueuedIngestionProperties(options.DatabaseName, options.TableName)
+                {
+                    DatabaseName = options.DatabaseName,
+                    TableName = options.TableName,
+                    Format = DataSourceFormat.multijson,
+                    IngestionMapping = m_ingestionMapping,
+                    FlushImmediately = options.FlushImmediately,
+                    ReportLevel = IngestionReportLevel.FailuresAndSuccesses,
+                    ReportMethod = IngestionReportMethod.Table
+                }, new StreamSourceOptions
+                {
+                    SourceId = sourceId,
+                    CompressionType = DataSourceCompressionType.GZip
+                }).ConfigureAwait(false);
             }
         }
 
