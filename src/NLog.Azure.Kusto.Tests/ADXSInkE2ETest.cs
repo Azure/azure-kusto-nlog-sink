@@ -4,6 +4,7 @@ using Kusto.Data.Net.Client;
 using Kusto.Ingest;
 using NLog.Azure.Kusto;
 using NLog.Config;
+using System.Data;
 using Xunit;
 
 namespace NLog.Azure.Kusto.Tests
@@ -65,9 +66,9 @@ namespace NLog.Azure.Kusto.Tests
 
 
         [Theory]
-        [InlineData("Test_ADXTargetStreamed", 10, 120000)]
-        [InlineData("Test_ADXNTargetBatched", 10, 120000)]
-        public async void Test_LogMessage(string testType, int numberOfLogs, int delayTime)
+        [InlineData("Test_ADXTargetStreamed", 10, 7, 30000)]
+        [InlineData("Test_ADXNTargetBatched", 10, 7, 30000)]
+        public async void Test_LogMessage(string testType, int numberOfLogs, int retries, int delayTime)
         {
             Logger logger = GetCustomLogger(testType);
             if (logger == null) throw new Exception("Logger/Test type not supported");
@@ -77,24 +78,36 @@ namespace NLog.Azure.Kusto.Tests
                 logger.Debug("{type} Processed debug Log {i}", testType, i);
                 logger.Error(new Exception("{" + testType + "} : This is E2E Exception."));
             }
-            await Task.Delay(delayTime);
 
             GetConnectionStringBuilder(testType);
             using (var kustoClient = KustoClientFactory.CreateCslQueryProvider(m_kustoConnectionStringBuilder))
             {
-                var reader = kustoClient.ExecuteQuery(m_generatedTableName + " | where Message contains \"" + testType + "\" | count; " +
-                    m_generatedTableName + " | where Message contains \"" + testType + "\" and  not(isempty(Exception))  | count");
-                while (reader.Read())
+                var finalExpCount = 0L;
+                var count = 0L;
+                IDataReader reader;
+                for (int i = 0; i < retries; i++)
                 {
-                    var count = reader.GetInt64(0);
-                    Assert.Equal(3 * numberOfLogs, count);
+                    await Task.Delay(delayTime);
+                    reader = kustoClient.ExecuteQuery(m_generatedTableName + " | where Message contains \"" + testType + "\" | count; " +
+                        m_generatedTableName + " | where Message contains \"" + testType + "\" and  not(isempty(Exception))  | count");
+                    while (reader.Read())
+                    {
+                        count = reader.GetInt64(0);
+                    }
+                    reader.NextResult();
+                    while (reader.Read())
+                    {
+                        finalExpCount = reader.GetInt64(0);
+                    }
+                    if (finalExpCount == numberOfLogs && count == (3 * numberOfLogs))
+                    {
+                        break;
+                    }
                 }
-                reader.NextResult();
-                while (reader.Read())
-                {
-                    var exceptionCount = reader.GetInt64(0);
-                    Assert.Equal(numberOfLogs, exceptionCount);
-                }
+                Assert.Equal(3 * numberOfLogs, count);
+                Assert.Equal(numberOfLogs, finalExpCount);
+
+
             }
         }
 
