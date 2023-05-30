@@ -1,11 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
+	<IsPackable>true</IsPackable>
     <OutputType>Library</OutputType>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>nlog; nlog-sink; Azure Data Explorer; ADX; Kusto;kusto-nlog-target;</PackageTags>
     <Title>Kusto NLog Sink</Title>
+	<authors>Microsoft</authors>
+	<copyright>© Microsoft Corporation. All rights reserved.</copyright>
+	<SignAssembly>true</SignAssembly>
+	<AssemblyOriginatorKeyFile>NLog.Azure.Kusto.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <None Include="..\..\README.md">
