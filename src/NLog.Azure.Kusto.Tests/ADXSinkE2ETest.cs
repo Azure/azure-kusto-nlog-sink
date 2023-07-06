@@ -88,8 +88,8 @@ namespace NLog.Azure.Kusto.Tests
                 for (int i = 0; i < retries; i++)
                 {
                     await Task.Delay(delayTime);
-                    reader = kustoClient.ExecuteQuery(m_generatedTableName + " | where Message contains \"" + testType + "\" | count; " +
-                        m_generatedTableName + " | where Message contains \"" + testType + "\" and  not(isempty(Exception))  | count");
+                    reader = kustoClient.ExecuteQuery(m_generatedTableName + " | where FormattedMessage contains \"" + testType + "\" | count; " +
+                        m_generatedTableName + " | where FormattedMessage contains \"" + testType + "\" and  not(isempty(Exception))  | count");
                     while (reader.Read())
                     {
                         count = reader.GetInt64(0);
