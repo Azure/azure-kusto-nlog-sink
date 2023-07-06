@@ -121,9 +121,14 @@ namespace NLog.Azure.Kusto
 
         public static string GetClusterUrl(string ingestUrl)
         {
-            string[] parts = ingestUrl.Split('-');
-            string clusterName = parts.Last();
-            return "https://" + clusterName;
+            string clusterName = ReplaceFirstInstance(ingestUrl,"ingest-", "");
+            return clusterName.Contains("https://") ? clusterName :  "https://" + clusterName;
+        }
+
+        public static string ReplaceFirstInstance( string source, string find, string replace)
+        {
+            int index = source.IndexOf(find);
+            return index < 0 ? source : source.Substring(0, index) + replace + source.Substring(index + find.Length);
         }
     }
 
