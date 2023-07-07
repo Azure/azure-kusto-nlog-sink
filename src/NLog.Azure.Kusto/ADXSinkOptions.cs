@@ -8,7 +8,7 @@ namespace NLog.Azure.Kusto
     public class ADXSinkOptions
     {
         private const string AppName = "NLog.Azure.Kusto";
-        private const string ClientVersion = "1.0.0";
+        private const string ClientVersion = "1.1.0";
         /// <summary>
         /// Azure Data Explorer endpoint (Ingestion endpoint for Queued Ingestion, Query endpoint for Streaming Ingestion)
         /// </summary>
