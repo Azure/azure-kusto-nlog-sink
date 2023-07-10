@@ -65,10 +65,16 @@ namespace NLog.Azure.Kusto
         /// </summary>
         public string ManagedIdentityClientId { get; set; }
 
+        /// <summary>
+        /// UserId for UserPormpt Authentication mode
+        /// </summary>
+        public string UserId { get; set; }
+
         public static readonly Dictionary<string, AuthenticationMode> AuthenticationModeMap = new Dictionary<string, AuthenticationMode>
         {
                 { Constants.AUTHENTICATION_TYPES.AadApplicationKey, AuthenticationMode.AadApplicationKey },
-                { Constants.AUTHENTICATION_TYPES.ManagedIdentity, AuthenticationMode.ManagedIdentity }
+                { Constants.AUTHENTICATION_TYPES.ManagedIdentity, AuthenticationMode.ManagedIdentity },
+                { Constants.AUTHENTICATION_TYPES.UserPromptAuthentication, AuthenticationMode.UserPrompAuthentication }
         };
 
         public KustoConnectionStringBuilder GetKustoConnectionStringBuilder(string type)
@@ -112,6 +118,11 @@ namespace NLog.Azure.Kusto
                         else kcsb = kcsb.WithAadUserManagedIdentity(this.ManagedIdentityClientId);
                         break;
                     }
+                case AuthenticationMode.UserPrompAuthentication:
+                    {
+                        kcsb = kcsb.WithAadUserPromptAuthentication(this.Authority, this.UserId);
+                        break;
+                    }
             }
             kcsb.ApplicationNameForTracing = AppName;
             kcsb.ClientVersionForTracing = ClientVersion;
@@ -136,5 +147,6 @@ namespace NLog.Azure.Kusto
     {
         AadApplicationKey,
         ManagedIdentity,
+        UserPrompAuthentication,
     }
 }

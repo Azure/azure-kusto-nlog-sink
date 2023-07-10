@@ -35,6 +35,7 @@ namespace NLog.Azure.Kusto
         public string ApplicationKey { get; set; }
         public string Authority { get; set; }
         public string ManagedIdentityClientId { get; set; }
+        public string UserId { get; set; }
         public string FlushImmediately { get; set; } = "false";
         public string MappingNameRef { get; set; }
 
@@ -58,7 +59,7 @@ namespace NLog.Azure.Kusto
                 FlushImmediately = bool.Parse(RenderLogEvent(FlushImmediately, defaultLogEvent)),
             };
 
-            SetupAuthCredentials(options, defaultLogEvent);
+            SetupAuthCredentials(options, defaultLogEvent);            
             m_streamingIngestion = options.UseStreamingIngestion;
             m_ingestionMapping = new IngestionMapping();
 
@@ -100,19 +101,33 @@ namespace NLog.Azure.Kusto
         private void SetupAuthCredentials(ADXSinkOptions options, LogEventInfo defaultLogEvent)
         {
             string appId = RenderLogEvent(ApplicationClientId, defaultLogEvent).NullIfEmpty();
+            string authenticationMode = RenderLogEvent(AuthenticationMode, defaultLogEvent).NullIfEmpty();
+            string userid = RenderLogEvent(UserId, defaultLogEvent).NullIfEmpty();
 
-            if (appId != null)
+            if ((authenticationMode != null && authenticationMode == Constants.AUTHENTICATION_TYPES.AadApplicationKey) || (authenticationMode == null && appId != null))
             {
                 options.ApplicationClientId = appId;
                 options.ApplicationKey = RenderLogEvent(ApplicationKey, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(nameof(ApplicationKey));
                 options.Authority = RenderLogEvent(Authority, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(nameof(Authority));
                 options.AuthenticationMode = Kusto.AuthenticationMode.AadApplicationKey;
             }
+            else if ((authenticationMode != null && authenticationMode == Constants.AUTHENTICATION_TYPES.UserPromptAuthentication) || (authenticationMode == null && userid != null))
+            {
+                options.UserId = RenderLogEvent(UserId, defaultLogEvent).NullIfEmpty();
+                options.Authority = RenderLogEvent(Authority, defaultLogEvent).NullIfEmpty();
+                options.AuthenticationMode = Kusto.AuthenticationMode.UserPrompAuthentication;
+            }
             else
             {
+                if(authenticationMode != null && authenticationMode != Constants.AUTHENTICATION_TYPES.ManagedIdentity)
+                {
+                    throw new Exception("The AuthenticationMode: \"" + authenticationMode + "\" is invalid!");
+                }
+
                 options.ManagedIdentityClientId = RenderLogEvent(ManagedIdentityClientId, defaultLogEvent).NullIfEmpty();
                 options.AuthenticationMode = Kusto.AuthenticationMode.ManagedIdentity;
             }
+
         }
 
         protected override async Task WriteAsyncTask(IList<LogEventInfo> logEvents, CancellationToken cancellationToken)

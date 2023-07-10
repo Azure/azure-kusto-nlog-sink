@@ -92,9 +92,13 @@ The `authentication_method_name` can be replaced with the following supported au
         * `ApplicationClientId`
         * `ApplicationKey`
         * `Authority`
-2. `AadUserManagedIdentity`
+2. `ManagedIdentity`
     * This authentication mode can be of two types System Assigned Managed Identity and User Assigned Managed Identity. In case of User Assigned Managed Identity, it requires the following properties to be set in the nlog target configuration:
         * `ManagedIdentityClientId`
+3. `UserPromptAuthentication`
+    * This is AAD Federated authentication using the currently logged-on user identity (user will be prompted if required). Takes the following optional properties:
+        * `Authority`
+        * `UserId`
 
 ### Running tests
 
