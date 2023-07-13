@@ -65,10 +65,17 @@ namespace NLog.Azure.Kusto
         /// </summary>
         public string ManagedIdentityClientId { get; set; }
 
+        /// <summary>
+        /// UserId for UserPormpt Authentication mode
+        /// </summary>
+        public string UserId { get; set; }
+
         public static readonly Dictionary<string, AuthenticationMode> AuthenticationModeMap = new Dictionary<string, AuthenticationMode>
         {
                 { Constants.AUTHENTICATION_TYPES.AadApplicationKey, AuthenticationMode.AadApplicationKey },
-                { Constants.AUTHENTICATION_TYPES.ManagedIdentity, AuthenticationMode.ManagedIdentity }
+                { Constants.AUTHENTICATION_TYPES.ManagedIdentity, AuthenticationMode.ManagedIdentity },
+                { Constants.AUTHENTICATION_TYPES.UserPromptAuthentication, AuthenticationMode.UserPromptAuthentication },
+                { Constants.AUTHENTICATION_TYPES.AzCliAuthentication, AuthenticationMode.AzCliAuthentication }
         };
 
         public KustoConnectionStringBuilder GetKustoConnectionStringBuilder(string type)
@@ -112,6 +119,16 @@ namespace NLog.Azure.Kusto
                         else kcsb = kcsb.WithAadUserManagedIdentity(this.ManagedIdentityClientId);
                         break;
                     }
+                case AuthenticationMode.UserPromptAuthentication:
+                    {
+                        kcsb = kcsb.WithAadUserPromptAuthentication(this.Authority, this.UserId);
+                        break;
+                    }
+                case AuthenticationMode.AzCliAuthentication:
+                    {
+                        kcsb = kcsb.WithAadAzCliAuthentication();
+                        break;
+                    }
             }
             kcsb.ApplicationNameForTracing = AppName;
             kcsb.ClientVersionForTracing = ClientVersion;
@@ -136,5 +153,7 @@ namespace NLog.Azure.Kusto
     {
         AadApplicationKey,
         ManagedIdentity,
+        UserPromptAuthentication,
+        AzCliAuthentication
     }
 }

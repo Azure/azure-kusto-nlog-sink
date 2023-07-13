@@ -14,6 +14,8 @@
         {
             public const string AadApplicationKey = "AadApplicationKey";
             public const string ManagedIdentity = "ManagedIdentity";
+            public const string UserPromptAuthentication = "UserPromptAuthentication";
+            public const string AzCliAuthentication = "AzCliAuthentication";
         }
     }
 }
