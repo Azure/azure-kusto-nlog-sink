@@ -74,7 +74,8 @@ namespace NLog.Azure.Kusto
         {
                 { Constants.AUTHENTICATION_TYPES.AadApplicationKey, AuthenticationMode.AadApplicationKey },
                 { Constants.AUTHENTICATION_TYPES.ManagedIdentity, AuthenticationMode.ManagedIdentity },
-                { Constants.AUTHENTICATION_TYPES.UserPromptAuthentication, AuthenticationMode.UserPrompAuthentication }
+                { Constants.AUTHENTICATION_TYPES.UserPromptAuthentication, AuthenticationMode.UserPromptAuthentication },
+                { Constants.AUTHENTICATION_TYPES.AzCliAuthentication, AuthenticationMode.AzCliAuthentication }
         };
 
         public KustoConnectionStringBuilder GetKustoConnectionStringBuilder(string type)
@@ -118,9 +119,14 @@ namespace NLog.Azure.Kusto
                         else kcsb = kcsb.WithAadUserManagedIdentity(this.ManagedIdentityClientId);
                         break;
                     }
-                case AuthenticationMode.UserPrompAuthentication:
+                case AuthenticationMode.UserPromptAuthentication:
                     {
                         kcsb = kcsb.WithAadUserPromptAuthentication(this.Authority, this.UserId);
+                        break;
+                    }
+                case AuthenticationMode.AzCliAuthentication:
+                    {
+                        kcsb = kcsb.WithAadAzCliAuthentication();
                         break;
                     }
             }
@@ -147,6 +153,7 @@ namespace NLog.Azure.Kusto
     {
         AadApplicationKey,
         ManagedIdentity,
-        UserPrompAuthentication,
+        UserPromptAuthentication,
+        AzCliAuthentication
     }
 }

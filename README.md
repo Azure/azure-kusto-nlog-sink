@@ -99,6 +99,8 @@ The `authentication_method_name` can be replaced with the following supported au
     * This is AAD Federated authentication using the currently logged-on user identity (user will be prompted if required). Takes the following optional properties:
         * `Authority`
         * `UserId`
+4. `AzCliAuthentication`
+    * Use Azure CLI for authentication.
 
 ### Running tests
 

@@ -104,22 +104,26 @@ namespace NLog.Azure.Kusto
             string authenticationMode = RenderLogEvent(AuthenticationMode, defaultLogEvent).NullIfEmpty();
             string userid = RenderLogEvent(UserId, defaultLogEvent).NullIfEmpty();
 
-            if ((authenticationMode != null && authenticationMode == Constants.AUTHENTICATION_TYPES.AadApplicationKey) || (authenticationMode == null && appId != null))
+            if (( authenticationMode == Constants.AUTHENTICATION_TYPES.AadApplicationKey) || (authenticationMode == null && appId != null))
             {
                 options.ApplicationClientId = appId;
                 options.ApplicationKey = RenderLogEvent(ApplicationKey, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(nameof(ApplicationKey));
                 options.Authority = RenderLogEvent(Authority, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(nameof(Authority));
                 options.AuthenticationMode = Kusto.AuthenticationMode.AadApplicationKey;
             }
-            else if ((authenticationMode != null && authenticationMode == Constants.AUTHENTICATION_TYPES.UserPromptAuthentication) || (authenticationMode == null && userid != null))
+            else if (( authenticationMode == Constants.AUTHENTICATION_TYPES.UserPromptAuthentication) || (authenticationMode == null && userid != null))
             {
                 options.UserId = RenderLogEvent(UserId, defaultLogEvent).NullIfEmpty();
                 options.Authority = RenderLogEvent(Authority, defaultLogEvent).NullIfEmpty();
-                options.AuthenticationMode = Kusto.AuthenticationMode.UserPrompAuthentication;
+                options.AuthenticationMode = Kusto.AuthenticationMode.UserPromptAuthentication;
+            }
+            else if (authenticationMode == Constants.AUTHENTICATION_TYPES.AzCliAuthentication)
+            {
+                options.AuthenticationMode = Kusto.AuthenticationMode.AzCliAuthentication;
             }
             else
             {
-                if(authenticationMode != null && authenticationMode != Constants.AUTHENTICATION_TYPES.ManagedIdentity)
+                if( authenticationMode != Constants.AUTHENTICATION_TYPES.ManagedIdentity)
                 {
                     throw new Exception("The AuthenticationMode: \"" + authenticationMode + "\" is invalid!");
                 }
