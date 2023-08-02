@@ -15,13 +15,9 @@ namespace NLog.Azure.Kusto.Tests
         public void Test_ConfigLoadsCorrectly()
         {
             var target = GetTarget("adxtarget");
-
-            Assert.Equal("appkey", target.ApplicationKey);
-            Assert.Equal("someclientid", target.ApplicationClientId);
-            Assert.Equal("someauthid", target.Authority);
-            Assert.Equal("https://somecluster.eastus.dev.kusto.windows.net/", target.IngestionEndpointUri);
+            Assert.Equal("Data Source=https://somecluster.westeurope.dev.kusto.windows.net;Database=e2e;Fed=True;AppClientId=APP-ID;AppKey=APP-KEY;Authority Id=TENANT-ID", target.ConnectionString);
             Assert.Equal("ADXNlog", target.TableName);
-            Assert.Equal("testdb", target.Database);
+            Assert.Equal("e2e", target.Database);
             Assert.Equal("false", target.UseStreamingIngestion);
         }
 

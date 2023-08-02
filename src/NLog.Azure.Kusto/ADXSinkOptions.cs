@@ -1,18 +1,22 @@
 ﻿using Kusto.Data;
+using Microsoft.VisualBasic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kusto.Cloud.Platform.Utils;
 
 namespace NLog.Azure.Kusto
 {
     public class ADXSinkOptions
     {
         private const string AppName = "NLog.Azure.Kusto";
-        private const string ClientVersion = "1.1.0";
+        private const string ClientVersion = "2.0.0";
+        private const string IngestPrefix = "ingest-";
+        private const string ProtocolSuffix = "://";
         /// <summary>
         /// Azure Data Explorer endpoint (Ingestion endpoint for Queued Ingestion, Query endpoint for Streaming Ingestion)
         /// </summary>
-        public string IngestionEndpointUri { get; set; }
+        public string ConnectionString { get; set; }
 
         /// <summary>
         /// The name of the database to which data should be ingested to
@@ -41,100 +45,34 @@ namespace NLog.Azure.Kusto
         public bool FlushImmediately { get; set; }
 
         /// <summary>
-        /// determines the authentication mode
-        /// </summary>
-        public AuthenticationMode AuthenticationMode { get; set; }
-
-        /// <summary>
-        /// application clientId
-        /// </summary>
-        public string ApplicationClientId { get; set; }
-
-        /// <summary>
-        /// ApplicationKey
-        /// </summary>
-        public string ApplicationKey { get; set; }
-
-        /// <summary>
-        /// Authority
-        /// </summary>
-        public string Authority { get; set; }
-
-        /// <summary>
         /// ManagedIdentity ClientId in case of user-assigned identity
         /// </summary>
         public string ManagedIdentityClientId { get; set; }
 
-        public static readonly Dictionary<string, AuthenticationMode> AuthenticationModeMap = new Dictionary<string, AuthenticationMode>
-        {
-                { Constants.AUTHENTICATION_TYPES.AadApplicationKey, AuthenticationMode.AadApplicationKey },
-                { Constants.AUTHENTICATION_TYPES.ManagedIdentity, AuthenticationMode.ManagedIdentity }
-        };
-
-        public KustoConnectionStringBuilder GetKustoConnectionStringBuilder(string type)
+        public KustoConnectionStringBuilder GetKustoConnectionStringBuilder(bool isDm)
         {
             KustoConnectionStringBuilder.DefaultPreventAccessToLocalSecretsViaKeywords = false;
-            KustoConnectionStringBuilder kcsb = null;
-            switch (type)
-            {
-                case Constants.CONNECTION_STRING_TYPE.DATA_MANAGEMENT:
-                    {
-                        kcsb = new KustoConnectionStringBuilder(this.IngestionEndpointUri, this.DatabaseName);
-                        break;
-                    }
-                case Constants.CONNECTION_STRING_TYPE.DATA_ENGINE:
-                    {
-                        kcsb = new KustoConnectionStringBuilder(GetClusterUrl(this.IngestionEndpointUri), this.DatabaseName);
-                        break;
-                    }
-            }
-            return GetKcsbWithAuthentication(kcsb);
-        }
+            string dmConnectionStringEndpoint = this.ConnectionString.Contains(IngestPrefix) ? this.ConnectionString : this.ConnectionString.ReplaceFirstOccurrence(ProtocolSuffix, ProtocolSuffix + IngestPrefix);
+            string engineConnectionStringEndpoint = this.ConnectionString.Contains(IngestPrefix) ? this.ConnectionString : this.ConnectionString.ReplaceFirstOccurrence(IngestPrefix, "");
+            string connectionString = isDm ? dmConnectionStringEndpoint : engineConnectionStringEndpoint;
 
-        protected KustoConnectionStringBuilder GetKcsbWithAuthentication(KustoConnectionStringBuilder kcsb)
-        {
-            if (kcsb == null)
+            KustoConnectionStringBuilder kcsb = new KustoConnectionStringBuilder(connectionString);
+            // Check if this is a case of managed identity
+            if (!string.IsNullOrEmpty(this.ManagedIdentityClientId))
             {
-                throw new ArgumentException("KustoConnectionStringBuilder cannot be null");
-            }
-
-            switch (this.AuthenticationMode)
-            {
-                case AuthenticationMode.AadApplicationKey:
-                    {
-                        kcsb = kcsb.WithAadApplicationKeyAuthentication(this.ApplicationClientId, this.ApplicationKey, this.Authority);
-                        break;
-                    }
-                case AuthenticationMode.ManagedIdentity:
-                    {
-                        if (string.IsNullOrEmpty(this.ManagedIdentityClientId))
-                            kcsb = kcsb.WithAadSystemManagedIdentity();
-                        else kcsb = kcsb.WithAadUserManagedIdentity(this.ManagedIdentityClientId);
-                        break;
-                    }
+                if ("system".Equals(this.ManagedIdentityClientId))
+                {
+                    kcsb = kcsb.WithAadSystemManagedIdentity();
+                }
+                else
+                {
+                    kcsb = kcsb.WithAadUserManagedIdentity(this.ManagedIdentityClientId);
+                }
             }
             kcsb.ApplicationNameForTracing = AppName;
             kcsb.ClientVersionForTracing = ClientVersion;
             kcsb.SetConnectorDetails(AppName, ClientVersion, "Nlog", "5.1.4");
             return kcsb;
         }
-
-        public static string GetClusterUrl(string ingestUrl)
-        {
-            string clusterName = ReplaceFirstInstance(ingestUrl,"ingest-", "");
-            return clusterName.Contains("https://") ? clusterName :  "https://" + clusterName;
-        }
-
-        public static string ReplaceFirstInstance( string source, string find, string replace)
-        {
-            int index = source.IndexOf(find);
-            return index < 0 ? source : source.Substring(0, index) + replace + source.Substring(index + find.Length);
-        }
-    }
-
-    public enum AuthenticationMode
-    {
-        AadApplicationKey,
-        ManagedIdentity,
     }
 }
