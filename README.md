@@ -18,21 +18,21 @@ Install-Package NLog.Azure.Kusto
 Add the ADX target to your NLog configuration:
 
 ```xml
-
 <nlog>
   <extensions>
     <add assembly="NLog.Azure.Kusto"/>
   </extensions>
   <targets>
    <!--  ADX target -->
-    <target name="adxtarget" xsi:type="ADXTarget"
+    <target name="adxtarget" type="ADXTarget"
       IngestionEndpointUri="<ADX connection string>"
       Database="<ADX database name>"
       TableName="<ADX table name>"
       ApplicationClientId="<AAD App clientId>"
       ApplicationKey="<AAD App key>"
-     Authority="<AAD tenant id>"
-    />
+      Authority="<AAD tenant id>">
+        <contextproperty name="HostName" layout="${hostname}" />  <!-- Repeatable, optional -->
+    </target>
   </targets>
   <rules>
     <logger minlevel="Info" name="*" writeTo="adxtarget"/>
@@ -42,20 +42,29 @@ Add the ADX target to your NLog configuration:
 
 ## Available Configuration Options
 
-| Option                      | Description                                                                                                                                                                 |
-|-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| IngestionEndpointUri                   | Ingest URL of ADX cluster created. Eg: `https://ingest-<clustername>.<region>.kusto.windows.net`.                                                                                                                                 |
-| Database                       | The name of the database to which data should be ingested into.                                                                                         |
-| TableName                     | The name of the table to which data should be ingested.                                                                                                                               |
-| AuthenticationMode                      | Authentication mode to be used by ADX target.                                                                                                                      |
-| ApplicationClientId                  | Application Client ID required for authentication.                                                                                                                     |
-| ApplicationKey                       | Application key required for authentication.                                                                                                                                                  |
-| Authority              | Tenant Id of the Azure Active Directory.                                                                                                                          |
-| ManagedIdentityClientId              | In case of ManagedIdentity Authentication, this need to be set for user assigned identity.                                                                                 |
-| FlushImmediately              | In case queued ingestion is selected, this property determines if is needed to flush the data immediately to ADX cluster. Not recommended to enable for data with higher workloads. The default is false.                                                                          |
-| MappingNameRef      | Use a data mapping configured in ADX.                                                                                        |
-| ColumnsMapping | Use an ingestion-time data mapping.                                                                                                                              |
-| IngestionTimout                 | Set timeout for ingestions in seconds.                               |
+| Destination Option          | Description                                                                                                                                                                 |
+|:----------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| IngestionEndpointUri        | Ingest URL of ADX cluster created. Eg: `https://ingest-<clustername>.<region>.kusto.windows.net`.                                                                                                                                 |
+| Database                    | The name of the database to which data should be ingested into.                                                                                         |
+| TableName                   | The name of the table to which data should be ingested.                                                                                                                               |
+| AuthenticationMode          | Authentication mode to be used by ADX target.                                                                                                                      |
+| ApplicationClientId         | Application Client ID required for authentication.                                                                                                                     |
+| ApplicationKey              | Application key required for authentication.                                                                                                                                                  |
+| Authority                   | Tenant Id of the Azure Active Directory.                                                                                                                          |
+| ManagedIdentityClientId     | In case of ManagedIdentity Authentication, this need to be set for user assigned identity.                                                                                 |
+| FlushImmediately            | In case queued ingestion is selected, this property determines if is needed to flush the data immediately to ADX cluster. Not recommended to enable for data with higher workloads. The default is false. |
+| MappingNameRef              | Use a data mapping configured in ADX.                                                                                        |
+
+
+| Payload Option              | Description                                                                                                                                                                 |
+|:----------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Layout                      | Formatting of the ADX-event FormattedMessage. The default is: `${logger}${message}`                                                                                         |
+| IncludeEventProperties      | Include LogEvent Properties in the ADX-event. The default is true                                                                                                           |
+| ContextProperty             | Include additional ContextProperties in the ADX-event. The default is empty collection.                                                                                           |
+| BatchSize                   | Gets or sets the number of log events that should be processed in a batch by the lazy writer thread. (Default 1)                                                            |
+| TaskDelayMilliseconds       | How many milliseconds to delay the actual send payload operation to optimize for batching (Default 1 ms)                                                                    |
+| QueueLimit                  | Gets or sets the limit on the number of requests in the lazy writer thread request queue (Default 10000)                                                                    |
+| OverflowAction              | Gets or sets the action (Discard, Grow, Block) to be taken when the lazy writer thread request queue count exceeds the set limit (Default Discard)                          |
 
 ### Mapping
 
@@ -68,14 +77,13 @@ By default, the sink uses the following data mapping:
 | Timestamp   | datetime    | $.Timestamp  |
 | Level       | string      | $.Level      |
 | Message     | string      | $.Message    |
-| FormattedMessage     | dynamic      | $.FormattedMessage    |
+| FormattedMessage | dynamic | $.FormattedMessage |
 | Exception   | string      | $.Exception  |
 | Properties  | dynamic     | $.Properties |
 
 This mapping can be overridden using the following options:
 
 * MappingNameRef: Use a data mapping configured in ADX.
-* ColumnsMapping: Use an ingestion-time data mapping.
 
 ### Authentication
 
