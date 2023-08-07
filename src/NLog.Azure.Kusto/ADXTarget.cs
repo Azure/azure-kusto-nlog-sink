@@ -95,7 +95,7 @@ namespace NLog.Azure.Kusto
         protected override async Task WriteAsyncTask(IList<LogEventInfo> logEvents, CancellationToken cancellationToken)
         {
             using var datastream = CreateStreamFromLogEvents(logEvents);
-
+            
             var sourceId = Guid.NewGuid();
             IKustoIngestionResult result;
             if (m_streamingIngestion)

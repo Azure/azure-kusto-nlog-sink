@@ -19,9 +19,8 @@ namespace NLog.Azure.Kusto.Tests
 
         public ADXSinkE2ETest()
         {
-            string connectionString = Environment.GetEnvironmentVariable("KustoConnectionString") ?? throw new ArgumentNullException("KustoConnectionString not set");
+            string connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? throw new ArgumentNullException("KustoConnectionString not set");
             string database = Environment.GetEnvironmentVariable("Database") ?? throw new ArgumentNullException("Database not set");
-
             KustoConnectionStringBuilder.DefaultPreventAccessToLocalSecretsViaKeywords = false;
             string dmConnectionStringEndpoint = connectionString.Contains("ingest-") ? connectionString : connectionString.ReplaceFirstOccurrence("://", "://ingest-");
             string engineConnectionStringEndpoint = connectionString.Contains("ingest-") ? connectionString : connectionString.ReplaceFirstOccurrence("ingest-", "");
@@ -114,7 +113,8 @@ namespace NLog.Azure.Kusto.Tests
                     {
                         var target = new ADXTarget
                         {
-                            ConnectionString = Environment.GetEnvironmentVariable("KustoConnectionString") ?? throw new ArgumentNullException("KustoConnectionString not set"),
+                            Database = Environment.GetEnvironmentVariable("DATABASE"),
+                            ConnectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? throw new ArgumentNullException("KustoConnectionString not set"),
                             TableName = m_generatedTableName,
                             UseStreamingIngestion = "false",
                             FlushImmediately = "true"
@@ -132,7 +132,8 @@ namespace NLog.Azure.Kusto.Tests
                     {
                         var target = new ADXTarget
                         {
-                            ConnectionString = Environment.GetEnvironmentVariable("KustoConnectionString") ?? throw new ArgumentNullException("KustoConnectionString not set"),
+                            Database = Environment.GetEnvironmentVariable("DATABASE"),
+                            ConnectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? throw new ArgumentNullException("KustoConnectionString not set"),
                             TableName = m_generatedTableName,
                             UseStreamingIngestion = "true"
                         };

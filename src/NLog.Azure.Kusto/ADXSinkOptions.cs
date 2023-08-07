@@ -53,9 +53,9 @@ namespace NLog.Azure.Kusto
         {
             KustoConnectionStringBuilder.DefaultPreventAccessToLocalSecretsViaKeywords = false;
             string dmConnectionStringEndpoint = this.ConnectionString.Contains(IngestPrefix) ? this.ConnectionString : this.ConnectionString.ReplaceFirstOccurrence(ProtocolSuffix, ProtocolSuffix + IngestPrefix);
-            string engineConnectionStringEndpoint = this.ConnectionString.Contains(IngestPrefix) ? this.ConnectionString : this.ConnectionString.ReplaceFirstOccurrence(IngestPrefix, "");
+            string engineConnectionStringEndpoint = !this.ConnectionString.Contains(IngestPrefix) ? this.ConnectionString : this.ConnectionString.ReplaceFirstOccurrence(IngestPrefix, "");
             string connectionString = isDm ? dmConnectionStringEndpoint : engineConnectionStringEndpoint;
-
+           
             KustoConnectionStringBuilder kcsb = new KustoConnectionStringBuilder(connectionString);
             // Check if this is a case of managed identity
             if (!string.IsNullOrEmpty(this.ManagedIdentityClientId))
