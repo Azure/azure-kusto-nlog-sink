@@ -5,6 +5,9 @@ An Azure Data Explorer(ADX) custom target that writes log events to an [Azure Da
 **Package** - [NLog.Azure.Kusto](http://nuget.org/packages/nlog.azure.kusto)
 | **Platforms** - .Net 6.0
 
+## ****!! BREAKING CHANGE !!****
+**IngestionEndpoint** will not be supported from verison 2.0.0 and above and will support only Connection String based authentication. Read more about [Kusto connection strings.](https://learn.microsoft.com/azure/data-explorer/kusto/api/connection-strings/kusto)
+
 ## Getting started
 
 Install from [NuGet]():
@@ -26,12 +29,9 @@ Add the ADX target to your NLog configuration:
   <targets>
    <!--  ADX target -->
     <target name="adxtarget" xsi:type="ADXTarget"
-      IngestionEndpointUri="<ADX connection string>"
+      ConnectionString="<ADX connection string>"
       Database="<ADX database name>"
       TableName="<ADX table name>"
-      ApplicationClientId="<AAD App clientId>"
-      ApplicationKey="<AAD App key>"
-     Authority="<AAD tenant id>"
     />
   </targets>
   <rules>
@@ -44,13 +44,9 @@ Add the ADX target to your NLog configuration:
 
 | Option                      | Description                                                                                                                                                                 |
 |-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| IngestionEndpointUri                   | Ingest URL of ADX cluster created. Eg: `https://ingest-<clustername>.<region>.kusto.windows.net`.                                                                                                                                 |
+| ConnectionString                   | Connection String for ADX cluster. Read more about [Kusto connection string](https://learn.microsoft.com/azure/data-explorer/kusto/api/connection-strings/kusto)                                                                                                                                 |
 | Database                       | The name of the database to which data should be ingested into.                                                                                         |
 | TableName                     | The name of the table to which data should be ingested.                                                                                                                               |
-| AuthenticationMode                      | Authentication mode to be used by ADX target.                                                                                                                      |
-| ApplicationClientId                  | Application Client ID required for authentication.                                                                                                                     |
-| ApplicationKey                       | Application key required for authentication.                                                                                                                                                  |
-| Authority              | Tenant Id of the Azure Active Directory.                                                                                                                          |
 | ManagedIdentityClientId              | In case of ManagedIdentity Authentication, this need to be set for user assigned identity.                                                                                 |
 | FlushImmediately              | In case queued ingestion is selected, this property determines if is needed to flush the data immediately to ADX cluster. Not recommended to enable for data with higher workloads. The default is false.                                                                          |
 | MappingNameRef      | Use a data mapping configured in ADX.                                                                                        |
@@ -79,22 +75,14 @@ This mapping can be overridden using the following options:
 
 ### Authentication
 
-Authentication can be used by setting the `AuthenticationMode` property in the nlog target configuration.
+Authentication will be taken according to the kusto connection string passed in the nlog target configuration.
 
-```xml
-AuthenticationMode="<authentication_method_name>"
-```
-
-The `authentication_method_name` can be replaced with the following supported authentication methods:
-
-1. `AadApplicationKey`
-    * This is the *default* authentication mode. This requires the following properties to be set in the nlog target configuration.
-        * `ApplicationClientId`
-        * `ApplicationKey`
-        * `Authority`
-2. `AadUserManagedIdentity`
-    * This authentication mode can be of two types System Assigned Managed Identity and User Assigned Managed Identity. In case of User Assigned Managed Identity, it requires the following properties to be set in the nlog target configuration:
-        * `ManagedIdentityClientId`
+There are few cases to keep in mind for the following authentication modes:
+1. `ManagedIdentity`
+    * This authentication mode can be of two types System Assigned Managed Identity and User Assigned Managed Identity. In case of User Assigned Managed Identity, it requires the following properties to be set in the nlog target configuration::
+        * `ManagedIdentityClientId` :
+            * `system` : This will enable managed identity authentication for system assigned managed identity.
+            * `<clientId>`:  Setting `ManagedIdentityClientId` to a specific clientId will enable managed identity authentication for user assigned managed identity.
 
 ### Running tests
 
@@ -105,20 +93,14 @@ To run the tests locally, you need to have an ADX cluster created.
     * For Windows:
 
       ```powershell
-        $env:INGEST_ENDPOINT="<ingestionURI>"
-        $env:APP_ID="<appId>"
-        $env:APP_KEY="<appKey>"
-        $env:AZURE_TENANT_ID="<tenant>"
+        $env:CONNECTION_STRING="<connectionstring>"
         $env:DATABASE="<databaseName>"
       ```
 
     * For Mac/Linux:
 
       ```bash
-        export INGEST_ENDPOINT="<ingestionURI>"
-        export APP_ID="<appId>"
-        export APP_KEY="<appKey>"
-        export AZURE_TENANT_ID="<tenant>"
+        export CONNECTION_STRING="<connectionstring>"
         export DATABASE="<databaseName>"
       ```
 

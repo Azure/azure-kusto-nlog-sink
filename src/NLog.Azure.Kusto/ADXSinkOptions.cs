@@ -45,9 +45,14 @@ namespace NLog.Azure.Kusto
         public bool FlushImmediately { get; set; }
 
         /// <summary>
-        /// ManagedIdentity ClientId in case of user-assigned identity
+        /// ManagedIdentity ClientId in case of user-assigned identity, set as 'system' for system-assigned identity
         /// </summary>
         public string ManagedIdentityClientId { get; set; }
+
+        /// <summary>
+        /// To use Azure Command line based authentication
+        /// </summary>
+        public bool AzCliAuth { get; set; }
 
         public KustoConnectionStringBuilder GetKustoConnectionStringBuilder(bool isDm)
         {
@@ -68,6 +73,11 @@ namespace NLog.Azure.Kusto
                 {
                     kcsb = kcsb.WithAadUserManagedIdentity(this.ManagedIdentityClientId);
                 }
+            }
+
+            if (this.AzCliAuth)
+            {
+                kcsb = kcsb.WithAadAzCliAuthentication();
             }
             kcsb.ApplicationNameForTracing = AppName;
             kcsb.ClientVersionForTracing = ClientVersion;

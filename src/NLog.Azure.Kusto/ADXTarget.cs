@@ -31,6 +31,7 @@ namespace NLog.Azure.Kusto
         public string ConnectionString { get; set; }
         public string UseStreamingIngestion { get; set; } = "false";
         public string ManagedIdentityClientId { get; set; }
+        public string AzCliAuth { get; set; }
         public string FlushImmediately { get; set; } = "false";
         public string MappingNameRef { get; set; }
 
@@ -53,6 +54,7 @@ namespace NLog.Azure.Kusto
                 MappingName = RenderLogEvent(MappingNameRef, defaultLogEvent),
                 FlushImmediately = bool.Parse(RenderLogEvent(FlushImmediately, defaultLogEvent)),
                 ManagedIdentityClientId = RenderLogEvent(ManagedIdentityClientId, defaultLogEvent).NullIfEmpty(),
+                AzCliAuth = bool.Parse(RenderLogEvent(AzCliAuth, defaultLogEvent)),
             };
             m_streamingIngestion = options.UseStreamingIngestion;
             m_ingestionMapping = new IngestionMapping();
