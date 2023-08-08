@@ -48,6 +48,7 @@ Add the ADX target to your NLog configuration:
 | Database                       | The name of the database to which data should be ingested into.                                                                                         |
 | TableName                     | The name of the table to which data should be ingested.                                                                                                                               |
 | ManagedIdentityClientId              | In case of ManagedIdentity Authentication, this need to be set for user assigned identity.                                                                                 |
+| AzCliAuth              | Enable ADX connector to use Azure CLI authentication                                                                                 |
 | FlushImmediately              | In case queued ingestion is selected, this property determines if is needed to flush the data immediately to ADX cluster. Not recommended to enable for data with higher workloads. The default is false.                                                                          |
 | MappingNameRef      | Use a data mapping configured in ADX.                                                                                        |
 | ColumnsMapping | Use an ingestion-time data mapping.                                                                                                                              |
@@ -78,11 +79,14 @@ This mapping can be overridden using the following options:
 Authentication will be taken according to the kusto connection string passed in the nlog target configuration.
 
 There are few cases to keep in mind for the following authentication modes:
-1. `ManagedIdentity`
+1. `Managed Identity Authentication`
     * This authentication mode can be of two types System Assigned Managed Identity and User Assigned Managed Identity. In case of User Assigned Managed Identity, it requires the following properties to be set in the nlog target configuration::
         * `ManagedIdentityClientId` :
             * `system` : This will enable managed identity authentication for system assigned managed identity.
             * `<clientId>`:  Setting `ManagedIdentityClientId` to a specific clientId will enable managed identity authentication for user assigned managed identity.
+
+2. `AzCliAuth`
+    * This authentication mode will use the Azure CLI to authenticate. This authentication mode will only work when the application is running on a machine with Azure CLI installed and logged in. Accepted values `true` or `false`. Default value is `false`.
 
 ### Running tests
 

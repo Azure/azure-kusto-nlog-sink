@@ -31,7 +31,7 @@ namespace NLog.Azure.Kusto
         public string ConnectionString { get; set; }
         public string UseStreamingIngestion { get; set; } = "false";
         public string ManagedIdentityClientId { get; set; }
-        public string AzCliAuth { get; set; }
+        public string AzCliAuth { get; set; } = "false";
         public string FlushImmediately { get; set; } = "false";
         public string MappingNameRef { get; set; }
 
