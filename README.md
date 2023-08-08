@@ -25,7 +25,7 @@ Add the ADX target to your NLog configuration:
   <targets>
    <!--  ADX target -->
     <target name="adxtarget" type="ADXTarget"
-      IngestionEndpointUri="<ADX connection string>"
+      ConnectionString="<ADX connection string>"
       Database="<ADX database name>"
       TableName="<ADX table name>"
       ApplicationClientId="<AAD App clientId>"
@@ -44,16 +44,14 @@ Add the ADX target to your NLog configuration:
 
 | Destination Option          | Description                                                                                                                                                                 |
 |:----------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| IngestionEndpointUri        | Ingest URL of ADX cluster created. Eg: `https://ingest-<clustername>.<region>.kusto.windows.net`.                                                                                                                                 |
+| ConnectionString            | Kusto connection string. Eg: `Data Source=https://ingest-<clustername>.<region>.kusto.windows.net;Database=NetDefaultDB;Fed=True`.                                          |
 | Database                    | The name of the database to which data should be ingested into.                                                                                         |
 | TableName                   | The name of the table to which data should be ingested.                                                                                                                               |
-| AuthenticationMode          | Authentication mode to be used by ADX target.                                                                                                                      |
-| ApplicationClientId         | Application Client ID required for authentication.                                                                                                                     |
-| ApplicationKey              | Application key required for authentication.                                                                                                                                                  |
-| Authority                   | Tenant Id of the Azure Active Directory.                                                                                                                          |
-| ManagedIdentityClientId     | In case of ManagedIdentity Authentication, this need to be set for user assigned identity.                                                                                 |
+| ManagedIdentityClientId     | In case of ManagedIdentity Authentication, this need to be set for user assigned identity ("system" = SystemManagedIdentity)                                                |
 | FlushImmediately            | In case queued ingestion is selected, this property determines if is needed to flush the data immediately to ADX cluster. Not recommended to enable for data with higher workloads. The default is false. |
 | MappingNameRef              | Use a data mapping configured in ADX.                                                                                        |
+| ApplicationName             | Override default application-name                                                                                                                                           |
+| ApplicationVersion          | Override default application-version                                                                                                                                        |
 
 
 | Payload Option              | Description                                                                                                                                                                 |
