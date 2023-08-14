@@ -14,7 +14,7 @@ This guide will help you in setting up and configuring the Azure Data Explorer T
 
 - Clone the NLog-ADX Target git repo
 - Set the following environment variables in the sample application:
-  - CONNECTIONSTRING : Kusto ConnectionString of ADX cluster created. Eg: `Data Source=https://ingest-<clustername>.<region>.kusto.windows.net;Database=NetDefaultDB;Fed=True`
+  - CONNECTION_STRING : Kusto ConnectionString of ADX cluster created. Eg: `Data Source=https://ingest-<clustername>.<region>.kusto.windows.net;Database=NetDefaultDB;Fed=True`
   - DATABASE : The name of the database to which data should be ingested into.
   - APP_ID : Application Client ID required for authentication.
   - APP_KEY : Application key required for authentication.

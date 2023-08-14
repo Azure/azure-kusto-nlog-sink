@@ -1,4 +1,5 @@
-﻿using Kusto.Data;
+﻿using Kusto.Cloud.Platform.Utils;
+using Kusto.Data;
 using Kusto.Data.Common;
 using Kusto.Data.Net.Client;
 using Kusto.Ingest;
@@ -13,50 +14,55 @@ namespace NLog.Azure.Kusto.Tests
     {
         private readonly string? m_generatedTableName;
         private readonly KustoConnectionStringBuilder? m_kustoConnectionStringBuilder;
+        private readonly KustoConnectionStringBuilder? m_kustoConnectionStringBuilderDM;
 
         public ADXSinkE2ETest()
         {
-            Assert.NotNull(Environment.GetEnvironmentVariable("CONNECTIONSTRING") ?? throw new ArgumentNullException("CONNECTIONSTRING not set"));
+            Assert.NotNull(Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? throw new ArgumentNullException("CONNECTION_STRING not set"));
             Assert.NotNull(Environment.GetEnvironmentVariable("DATABASE") ?? throw new ArgumentNullException("DATABASE name not set"));
-            Assert.NotNull(Environment.GetEnvironmentVariable("APP_ID") ?? throw new ArgumentNullException("APP_ID not set"));
-            Assert.NotNull(Environment.GetEnvironmentVariable("AZURE_TENANT_ID") ?? throw new ArgumentNullException("AZURE_TENANT_ID not set"));
-            Assert.NotNull(Environment.GetEnvironmentVariable("APP_KEY") ?? throw new ArgumentNullException("APP_KEY not set"));
+
+            var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING");
+            var database = Environment.GetEnvironmentVariable("DATABASE");
+
+            KustoConnectionStringBuilder.DefaultPreventAccessToLocalSecretsViaKeywords = false;
+            string dmConnectionStringEndpoint = connectionString.Contains("ingest-") ? connectionString : connectionString.ReplaceFirstOccurrence("://", "://ingest-");
+            string engineConnectionStringEndpoint = !connectionString.Contains("ingest-") ? connectionString : connectionString.ReplaceFirstOccurrence("ingest-", "");
+
+            m_kustoConnectionStringBuilder = new KustoConnectionStringBuilder(engineConnectionStringEndpoint);
+            m_kustoConnectionStringBuilderDM = new KustoConnectionStringBuilder(dmConnectionStringEndpoint);
+
+            using ICslAdminProvider kustoClient = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder), kustoClientDM = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilderDM);
 
             var randomInt = new Random().Next();
             m_generatedTableName = "ADXNlogSink_" + randomInt;
-            
-            m_kustoConnectionStringBuilder = new KustoConnectionStringBuilder(Environment.GetEnvironmentVariable("connectionString"),
-                    Environment.GetEnvironmentVariable("databaseName"));
-            using (var kustoClient = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder))
+
+            var command = CslCommandGenerator.GenerateTableCreateCommand(m_generatedTableName,
+            new[]
             {
-                var command = CslCommandGenerator.GenerateTableCreateCommand(m_generatedTableName,
-                new[]
-                {
-                    Tuple.Create("Timestamp", "System.DateTime"),
-                    Tuple.Create("Level", "System.String"),
-                    Tuple.Create("Message", "System.string"),
-                    Tuple.Create("FormattedMessage", "System.string"),
-                    Tuple.Create("Exception", "System.string"),
-                    Tuple.Create("Properties", "System.Object"),
-                });
+                Tuple.Create("Timestamp", "System.DateTime"),
+                Tuple.Create("Level", "System.String"),
+                Tuple.Create("Message", "System.string"),
+                Tuple.Create("FormattedMessage", "System.string"),
+                Tuple.Create("Exception", "System.string"),
+                Tuple.Create("Properties", "System.Object"),
+            });
 
-                var alterBatchingPolicy = CslCommandGenerator.GenerateTableAlterIngestionBatchingPolicyCommand(
-                    Environment.GetEnvironmentVariable("DATABASE"),
-                    m_generatedTableName,
-                    new IngestionBatchingPolicy(TimeSpan.FromSeconds(1), 3, 1024));
+            var alterBatchingPolicy = CslCommandGenerator.GenerateTableAlterIngestionBatchingPolicyCommand(
+                database,
+                m_generatedTableName,
+                new IngestionBatchingPolicy(TimeSpan.FromSeconds(1), 3, 1024));
 
-                var enableStreamingIngestion = CslCommandGenerator.GenerateTableAlterStreamingIngestionPolicyCommand(
-                    m_generatedTableName,
-                    true);
+            var enableStreamingIngestion = CslCommandGenerator.GenerateTableAlterStreamingIngestionPolicyCommand(
+                m_generatedTableName,
+                true);
 
-                var refreshDmPolicies = CslCommandGenerator.GenerateDmRefreshPoliciesCommand();
+            var refreshDmPolicies = CslCommandGenerator.GenerateDmRefreshPoliciesCommand();
 
-                kustoClient.ExecuteControlCommand(Environment.GetEnvironmentVariable("DATABASE"), command);
-                kustoClient.ExecuteControlCommand(Environment.GetEnvironmentVariable("DATABASE"), alterBatchingPolicy);
-                kustoClient.ExecuteControlCommand(Environment.GetEnvironmentVariable("DATABASE"), enableStreamingIngestion);
-                //Buffer to get commands executed
-                Thread.Sleep(50000);
-            }
+            kustoClient.ExecuteControlCommand(database, command);
+            kustoClient.ExecuteControlCommand(database, alterBatchingPolicy);
+            kustoClient.ExecuteControlCommand(database, enableStreamingIngestion);
+                
+            kustoClientDM.ExecuteControlCommand(database, ".refresh database '" + database + "' table '" + m_generatedTableName + "' cache ingestionbatchingpolicy");
         }
 
 
@@ -113,7 +119,7 @@ namespace NLog.Azure.Kusto.Tests
                     {
                         var target = new ADXTarget
                         {
-                            ConnectionString = Environment.GetEnvironmentVariable("CONNECTIONSTRING") ?? throw new ArgumentNullException("CONNECTIONSTRING not set"),
+                            ConnectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? throw new ArgumentNullException("CONNECTION_STRING not set"),
                             Database = Environment.GetEnvironmentVariable("DATABASE") ?? throw new ArgumentNullException("DATABASE name not set"),
                             TableName = m_generatedTableName,
                             UseStreamingIngestion = "false",
@@ -130,7 +136,7 @@ namespace NLog.Azure.Kusto.Tests
                     {
                         var target = new ADXTarget
                         {
-                            ConnectionString = Environment.GetEnvironmentVariable("CONNECTIONSTRING") ?? throw new ArgumentNullException("CONNECTIONSTRING not set"),
+                            ConnectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? throw new ArgumentNullException("CONNECTION_STRING not set"),
                             Database = Environment.GetEnvironmentVariable("DATABASE") ?? throw new ArgumentNullException("DATABASE name not set"),
                             TableName = m_generatedTableName,
                             UseStreamingIngestion = "true"
