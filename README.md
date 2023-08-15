@@ -27,10 +27,7 @@ Add the ADX target to your NLog configuration:
     <target name="adxtarget" type="ADXTarget"
       ConnectionString="<ADX connection string>"
       Database="<ADX database name>"
-      TableName="<ADX table name>"
-      ApplicationClientId="<AAD App clientId>"
-      ApplicationKey="<AAD App key>"
-      Authority="<AAD tenant id>">
+      TableName="<ADX table name>">
         <contextproperty name="HostName" layout="${hostname}" />  <!-- Repeatable, optional -->
     </target>
   </targets>
@@ -83,25 +80,6 @@ This mapping can be overridden using the following options:
 
 * MappingNameRef: Use a data mapping configured in ADX.
 
-### Authentication
-
-Authentication can be used by setting the `AuthenticationMode` property in the nlog target configuration.
-
-```xml
-AuthenticationMode="<authentication_method_name>"
-```
-
-The `authentication_method_name` can be replaced with the following supported authentication methods:
-
-1. `AadApplicationKey`
-    * This is the *default* authentication mode. This requires the following properties to be set in the nlog target configuration.
-        * `ApplicationClientId`
-        * `ApplicationKey`
-        * `Authority`
-2. `AadUserManagedIdentity`
-    * This authentication mode can be of two types System Assigned Managed Identity and User Assigned Managed Identity. In case of User Assigned Managed Identity, it requires the following properties to be set in the nlog target configuration:
-        * `ManagedIdentityClientId`
-
 ### Running tests
 
 To run the tests locally, you need to have an ADX cluster created.
@@ -111,9 +89,7 @@ To run the tests locally, you need to have an ADX cluster created.
     * For Windows:
 
       ```powershell
-        $env:INGEST_ENDPOINT="<ingestionURI>"
-        $env:APP_ID="<appId>"
-        $env:APP_KEY="<appKey>"
+        $env:CONNECTION_STRING="<connectionString>"
         $env:AZURE_TENANT_ID="<tenant>"
         $env:DATABASE="<databaseName>"
       ```
@@ -121,9 +97,7 @@ To run the tests locally, you need to have an ADX cluster created.
     * For Mac/Linux:
 
       ```bash
-        export INGEST_ENDPOINT="<ingestionURI>"
-        export APP_ID="<appId>"
-        export APP_KEY="<appKey>"
+        export CONNECTION_STRING="<connectionString>"
         export AZURE_TENANT_ID="<tenant>"
         export DATABASE="<databaseName>"
       ```
