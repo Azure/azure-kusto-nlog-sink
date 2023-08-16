@@ -51,6 +51,7 @@ namespace NLog.Azure.Kusto
                 ConnectionString = RenderLogEvent(ConnectionString, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(nameof(ConnectionString)),
                 DatabaseName = RenderLogEvent(Database, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(nameof(Database)),
                 TableName = RenderLogEvent(TableName, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(nameof(TableName)),
+                ManagedIdentityClientId = RenderLogEvent(ManagedIdentityClientId, defaultLogEvent).NullIfEmpty(), 
                 UseStreamingIngestion = bool.Parse(RenderLogEvent(UseStreamingIngestion, defaultLogEvent).NullIfEmpty() ?? "false"),
                 MappingName = RenderLogEvent(MappingNameRef, defaultLogEvent).NullIfEmpty(),
                 FlushImmediately = bool.Parse(RenderLogEvent(FlushImmediately, defaultLogEvent).NullIfEmpty() ?? "false"),
