@@ -1,4 +1,5 @@
-﻿using Kusto.Data;
+﻿using Kusto.Cloud.Platform.Utils;
+using Kusto.Data;
 using Kusto.Data.Common;
 using Kusto.Data.Net.Client;
 using Kusto.Ingest;
@@ -17,51 +18,51 @@ namespace NLog.Azure.Kusto.Tests
 
         public ADXSinkE2ETest()
         {
-            Assert.NotNull(Environment.GetEnvironmentVariable("INGEST_ENDPOINT") ?? throw new ArgumentNullException("INGEST_ENDPOINT not set"));
+            Assert.NotNull(Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? throw new ArgumentNullException("CONNECTION_STRING not set"));
             Assert.NotNull(Environment.GetEnvironmentVariable("DATABASE") ?? throw new ArgumentNullException("DATABASE name not set"));
-            Assert.NotNull(Environment.GetEnvironmentVariable("APP_ID") ?? throw new ArgumentNullException("APP_ID not set"));
-            Assert.NotNull(Environment.GetEnvironmentVariable("AZURE_TENANT_ID") ?? throw new ArgumentNullException("AZURE_TENANT_ID not set"));
-            Assert.NotNull(Environment.GetEnvironmentVariable("APP_KEY") ?? throw new ArgumentNullException("APP_KEY not set"));
+
+            var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING");
+            var database = Environment.GetEnvironmentVariable("DATABASE");
+
+            KustoConnectionStringBuilder.DefaultPreventAccessToLocalSecretsViaKeywords = false;
+            string dmConnectionStringEndpoint = connectionString.Contains("ingest-") ? connectionString : connectionString.ReplaceFirstOccurrence("://", "://ingest-");
+            string engineConnectionStringEndpoint = !connectionString.Contains("ingest-") ? connectionString : connectionString.ReplaceFirstOccurrence("ingest-", "");
+
+            m_kustoConnectionStringBuilder = new KustoConnectionStringBuilder(engineConnectionStringEndpoint);
+            m_kustoConnectionStringBuilderDM = new KustoConnectionStringBuilder(dmConnectionStringEndpoint);
+
+            using ICslAdminProvider kustoClient = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder), kustoClientDM = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilderDM);
 
             var randomInt = new Random().Next();
             m_generatedTableName = "ADXNlogSink_" + randomInt;
-            m_kustoConnectionStringBuilder = GetConnectionStringBuilder("engine");
-            m_kustoConnectionStringBuilderDM = GetConnectionStringBuilder("dm");
 
-            if (m_kustoConnectionStringBuilder == null) throw new Exception("KustoConnectionStringBuilder cannot be created.");
-            if (m_kustoConnectionStringBuilderDM == null) throw new Exception("KustoConnectionStringBuilder DM cannot be created.");
-
-            using (ICslAdminProvider kustoClient = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder), kustoClientDM = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilderDM))
+            var command = CslCommandGenerator.GenerateTableCreateCommand(m_generatedTableName,
+            new[]
             {
-                var command = CslCommandGenerator.GenerateTableCreateCommand(m_generatedTableName,
-                new[]
-                {
-                    Tuple.Create("Timestamp", "System.DateTime"),
-                    Tuple.Create("Level", "System.String"),
-                    Tuple.Create("Message", "System.string"),
-                    Tuple.Create("FormattedMessage", "System.string"),
-                    Tuple.Create("Exception", "System.string"),
-                    Tuple.Create("Properties", "System.Object"),
-                });
+                Tuple.Create("Timestamp", "System.DateTime"),
+                Tuple.Create("Level", "System.String"),
+                Tuple.Create("Message", "System.string"),
+                Tuple.Create("FormattedMessage", "System.string"),
+                Tuple.Create("Exception", "System.string"),
+                Tuple.Create("Properties", "System.Object"),
+            });
 
-                var alterBatchingPolicy = CslCommandGenerator.GenerateTableAlterIngestionBatchingPolicyCommand(
-                    Environment.GetEnvironmentVariable("DATABASE"),
-                    m_generatedTableName,
-                    new IngestionBatchingPolicy(TimeSpan.FromSeconds(1), 3, 1024));
+            var alterBatchingPolicy = CslCommandGenerator.GenerateTableAlterIngestionBatchingPolicyCommand(
+                database,
+                m_generatedTableName,
+                new IngestionBatchingPolicy(TimeSpan.FromSeconds(1), 3, 1024));
 
-                var enableStreamingIngestion = CslCommandGenerator.GenerateTableAlterStreamingIngestionPolicyCommand(
-                    m_generatedTableName,
-                    true);
+            var enableStreamingIngestion = CslCommandGenerator.GenerateTableAlterStreamingIngestionPolicyCommand(
+                m_generatedTableName,
+                true);
 
-                var refreshDmPolicies = CslCommandGenerator.GenerateDmRefreshPoliciesCommand();
+            var refreshDmPolicies = CslCommandGenerator.GenerateDmRefreshPoliciesCommand();
 
-                kustoClient.ExecuteControlCommand(Environment.GetEnvironmentVariable("DATABASE"), command);
-                kustoClient.ExecuteControlCommand(Environment.GetEnvironmentVariable("DATABASE"), alterBatchingPolicy);
-                kustoClient.ExecuteControlCommand(Environment.GetEnvironmentVariable("DATABASE"), enableStreamingIngestion);
-                kustoClientDM.ExecuteControlCommand(Environment.GetEnvironmentVariable("DATABASE"), ".refresh database '" + Environment.GetEnvironmentVariable("DATABASE") + "' table '" + m_generatedTableName + "' cache ingestionbatchingpolicy");
-                //Buffer to get commands executed
-                Thread.Sleep(50000);
-            }
+            kustoClient.ExecuteControlCommand(database, command);
+            kustoClient.ExecuteControlCommand(database, alterBatchingPolicy);
+            kustoClient.ExecuteControlCommand(database, enableStreamingIngestion);
+                
+            kustoClientDM.ExecuteControlCommand(database, ".refresh database '" + database + "' table '" + m_generatedTableName + "' cache ingestionbatchingpolicy");
         }
 
 
@@ -79,7 +80,6 @@ namespace NLog.Azure.Kusto.Tests
                 logger.Error(new Exception("{" + testType + "} : This is E2E Exception."));
             }
 
-            GetConnectionStringBuilder(testType);
             using (var kustoClient = KustoClientFactory.CreateCslQueryProvider(m_kustoConnectionStringBuilder))
             {
                 var finalExpCount = 0L;
@@ -119,11 +119,8 @@ namespace NLog.Azure.Kusto.Tests
                     {
                         var target = new ADXTarget
                         {
-                            IngestionEndpointUri = Environment.GetEnvironmentVariable("INGEST_ENDPOINT") ?? throw new ArgumentNullException("INGEST_ENDPOINT not set"),
+                            ConnectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? throw new ArgumentNullException("CONNECTION_STRING not set"),
                             Database = Environment.GetEnvironmentVariable("DATABASE") ?? throw new ArgumentNullException("DATABASE name not set"),
-                            ApplicationClientId = Environment.GetEnvironmentVariable("APP_ID") ?? throw new ArgumentNullException("APP_ID not set"),
-                            Authority = Environment.GetEnvironmentVariable("AZURE_TENANT_ID") ?? throw new ArgumentNullException("AZURE_TENANT_ID not set"),
-                            ApplicationKey = Environment.GetEnvironmentVariable("APP_KEY") ?? throw new ArgumentNullException("APP_KEY not set"),
                             TableName = m_generatedTableName,
                             UseStreamingIngestion = "false",
                             FlushImmediately = "true"
@@ -139,11 +136,8 @@ namespace NLog.Azure.Kusto.Tests
                     {
                         var target = new ADXTarget
                         {
-                            IngestionEndpointUri = Environment.GetEnvironmentVariable("INGEST_ENDPOINT") ?? throw new ArgumentNullException("INGEST_ENDPOINT not set"),
+                            ConnectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? throw new ArgumentNullException("CONNECTION_STRING not set"),
                             Database = Environment.GetEnvironmentVariable("DATABASE") ?? throw new ArgumentNullException("DATABASE name not set"),
-                            ApplicationClientId = Environment.GetEnvironmentVariable("APP_ID") ?? throw new ArgumentNullException("APP_ID not set"),
-                            Authority = Environment.GetEnvironmentVariable("AZURE_TENANT_ID") ?? throw new ArgumentNullException("AZURE_TENANT_ID not set"),
-                            ApplicationKey = Environment.GetEnvironmentVariable("APP_KEY") ?? throw new ArgumentNullException("APP_KEY not set"),
                             TableName = m_generatedTableName,
                             UseStreamingIngestion = "true"
                         };
@@ -155,36 +149,6 @@ namespace NLog.Azure.Kusto.Tests
                         return LogManager.GetLogger(type);
                     }
 
-            }
-#pragma warning disable CS8603 // Possible null reference return.
-            return null;
-#pragma warning restore CS8603 // Possible null reference return.
-        }
-
-        private KustoConnectionStringBuilder GetConnectionStringBuilder(string type)
-        {
-            switch (type)
-            {
-                case "engine":
-                case "Test_ADXNTargetBatched":
-                    {
-                        return new KustoConnectionStringBuilder(ADXSinkOptions.GetClusterUrl(
-             Environment.GetEnvironmentVariable("INGEST_ENDPOINT")),
-         Environment.GetEnvironmentVariable("DATABASE"))
-     .WithAadApplicationKeyAuthentication(Environment.GetEnvironmentVariable("APP_ID"),
-         Environment.GetEnvironmentVariable("APP_KEY"), Environment.GetEnvironmentVariable("AZURE_TENANT_ID"));
-
-                    }
-                case "dm":
-                case "Test_ADXTargetStreamed":
-                    {
-                        return new KustoConnectionStringBuilder(
-             Environment.GetEnvironmentVariable("INGEST_ENDPOINT"),
-         Environment.GetEnvironmentVariable("DATABASE"))
-     .WithAadApplicationKeyAuthentication(Environment.GetEnvironmentVariable("APP_ID"),
-         Environment.GetEnvironmentVariable("APP_KEY"), Environment.GetEnvironmentVariable("AZURE_TENANT_ID"));
-
-                    }
             }
 #pragma warning disable CS8603 // Possible null reference return.
             return null;

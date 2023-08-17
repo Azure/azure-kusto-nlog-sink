@@ -14,10 +14,8 @@ This guide will help you in setting up and configuring the Azure Data Explorer T
 
 - Clone the NLog-ADX Target git repo
 - Set the following environment variables in the sample application:
-  - INGEST_ENDPOINT : Ingest URL of ADX cluster created. Eg: `https://ingest-<clustername>.<region>.kusto.windows.net`
+  - CONNECTION_STRING : Kusto ConnectionString of ADX cluster created. Eg: `Data Source=https://ingest-<clustername>.<region>.kusto.windows.net;Database=NetDefaultDB;Fed=True`
   - DATABASE : The name of the database to which data should be ingested into.
-  - APP_ID : Application Client ID required for authentication.
-  - APP_KEY : Application key required for authentication.
   - AZURE_TENANT_ID : Tenant Id of the Azure Active Directory.
 
 ## Step 1: Install the ADX Target for NLog
@@ -35,12 +33,10 @@ Open the configuration file and replace the existing target configuration one wi
 
 ```xml
 <target name="adxtarget" xsi:type="ADXTarget"
-  IngestionEndpointUri="<ADX connection string>"
+  ConnectionString="<ADX connection string>"
   Database="<ADX database name>"
   TableName="<ADX table name>"
   ApplicationClientId="<AAD App clientId>"
-  ApplicationKey="<AAD App key>"
-  Authority="<AAD tenant id>"
 />
 
 ##Rules

@@ -28,12 +28,10 @@ namespace NLog.Azure.Kusto
         [RequiredParameter]
         public string TableName { get; set; }
         [RequiredParameter]
-        public string IngestionEndpointUri { get; set; }
+        public Layout ConnectionString { get; set; }
+        public Layout ApplicationName { get; set; }
+        public Layout ApplicationVersion { get; set; }
         public string UseStreamingIngestion { get; set; } = "false";
-        public string AuthenticationMode { get; set; }
-        public string ApplicationClientId { get; set; }
-        public string ApplicationKey { get; set; }
-        public string Authority { get; set; }
         public string ManagedIdentityClientId { get; set; }
         public string FlushImmediately { get; set; } = "false";
         public string MappingNameRef { get; set; }
@@ -50,15 +48,17 @@ namespace NLog.Azure.Kusto
             var defaultLogEvent = LogEventInfo.CreateNullEvent();
             options = new ADXSinkOptions
             {
+                ConnectionString = RenderLogEvent(ConnectionString, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(nameof(ConnectionString)),
                 DatabaseName = RenderLogEvent(Database, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(nameof(Database)),
-                IngestionEndpointUri = RenderLogEvent(IngestionEndpointUri, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(IngestionEndpointUri),
-                TableName = RenderLogEvent(TableName, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(TableName),
-                UseStreamingIngestion = bool.Parse(RenderLogEvent(UseStreamingIngestion, defaultLogEvent)),
-                MappingName = RenderLogEvent(MappingNameRef, defaultLogEvent),
-                FlushImmediately = bool.Parse(RenderLogEvent(FlushImmediately, defaultLogEvent)),
+                TableName = RenderLogEvent(TableName, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(nameof(TableName)),
+                ManagedIdentityClientId = RenderLogEvent(ManagedIdentityClientId, defaultLogEvent).NullIfEmpty(), 
+                UseStreamingIngestion = bool.Parse(RenderLogEvent(UseStreamingIngestion, defaultLogEvent).NullIfEmpty() ?? "false"),
+                MappingName = RenderLogEvent(MappingNameRef, defaultLogEvent).NullIfEmpty(),
+                FlushImmediately = bool.Parse(RenderLogEvent(FlushImmediately, defaultLogEvent).NullIfEmpty() ?? "false"),
+                ApplicationName = RenderLogEvent(ApplicationName, defaultLogEvent).NullIfEmpty(),
+                ApplicationVersion = RenderLogEvent(ApplicationVersion, defaultLogEvent).NullIfEmpty(),
             };
 
-            SetupAuthCredentials(options, defaultLogEvent);
             m_streamingIngestion = options.UseStreamingIngestion;
             m_ingestionMapping = new IngestionMapping();
 
@@ -67,12 +67,12 @@ namespace NLog.Azure.Kusto
                 m_ingestionMapping.IngestionMappingReference = options.MappingName;
             }
 
-            KustoConnectionStringBuilder dmkcsb = options.GetKustoConnectionStringBuilder(Constants.CONNECTION_STRING_TYPE.DATA_MANAGEMENT);
-            KustoConnectionStringBuilder engineKcsb = options.GetKustoConnectionStringBuilder(Constants.CONNECTION_STRING_TYPE.DATA_ENGINE);
+            var dmKcsb = options.GetIngestKcsb();
+            var engineKcsb = options.GetEngineKcsb();
 
             m_ingestClient = options.UseStreamingIngestion
-                ? KustoIngestFactory.CreateManagedStreamingIngestClient(engineKcsb, dmkcsb)
-                : KustoIngestFactory.CreateQueuedIngestClient(dmkcsb);
+                ? KustoIngestFactory.CreateManagedStreamingIngestClient(engineKcsb, dmKcsb)
+                : KustoIngestFactory.CreateQueuedIngestClient(dmKcsb);
 
             _jsonLayoutProperties.IncludeEventProperties = IncludeEventProperties;
             if (ContextProperties?.Count > 0)
@@ -94,24 +94,6 @@ namespace NLog.Azure.Kusto
             finally
             {
                 m_ingestClient = null;
-            }
-        }
-
-        private void SetupAuthCredentials(ADXSinkOptions options, LogEventInfo defaultLogEvent)
-        {
-            string appId = RenderLogEvent(ApplicationClientId, defaultLogEvent).NullIfEmpty();
-
-            if (appId != null)
-            {
-                options.ApplicationClientId = appId;
-                options.ApplicationKey = RenderLogEvent(ApplicationKey, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(nameof(ApplicationKey));
-                options.Authority = RenderLogEvent(Authority, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(nameof(Authority));
-                options.AuthenticationMode = Kusto.AuthenticationMode.AadApplicationKey;
-            }
-            else
-            {
-                options.ManagedIdentityClientId = RenderLogEvent(ManagedIdentityClientId, defaultLogEvent).NullIfEmpty();
-                options.AuthenticationMode = Kusto.AuthenticationMode.ManagedIdentity;
             }
         }
 
