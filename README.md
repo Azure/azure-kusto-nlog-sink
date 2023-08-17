@@ -5,6 +5,9 @@ An Azure Data Explorer(ADX) custom target that writes log events to an [Azure Da
 **Package** - [NLog.Azure.Kusto](http://nuget.org/packages/nlog.azure.kusto)
 | **Platforms** - .Net 6.0
 
+## ****!! BREAKING CHANGE !!****
+**IngestionEndpoint** will not be supported from verison 2.0.0. It has been replaced with Connection String based authentication. Read more about [Kusto connection strings.](https://learn.microsoft.com/azure/data-explorer/kusto/api/connection-strings/kusto)
+
 ## Getting started
 
 Install from [NuGet]():
@@ -42,10 +45,11 @@ Add the ADX target to your NLog configuration:
 
 | Destination Option          | Description                                                                                                                                                                 |
 |:----------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| ConnectionString            | Kusto connection string. Eg: `Data Source=https://ingest-<clustername>.<region>.kusto.windows.net;Database=NetDefaultDB;Fed=True`.                                          |
+| ConnectionString            | Kusto connection string. Eg: `Data Source=https://ingest-<clustername>.<region>.kusto.windows.net;Database=NetDefaultDB;Fed=True`. Read about [Kusto Connection String](https://learn.microsoft.com/azure/data-explorer/kusto/api/connection-strings/kusto)                                          |
 | Database                    | The name of the database to which data should be ingested into.                                                                                         |
 | TableName                   | The name of the table to which data should be ingested.                                                                                                                               |
 | ManagedIdentityClientId     | In case of ManagedIdentity Authentication, this need to be set for user assigned identity ("system" = SystemManagedIdentity)                                                |
+| AzCliAuth              | Enable ADX connector to use Azure CLI authentication                                                                                 |
 | FlushImmediately            | In case queued ingestion is selected, this property determines if is needed to flush the data immediately to ADX cluster. Not recommended to enable for data with higher workloads. The default is false. |
 | MappingNameRef              | Use a data mapping configured in ADX.                                                                                        |
 | ApplicationName             | Override default application-name                                                                                                                                           |
@@ -94,6 +98,8 @@ There are few cases to keep in mind for the following authentication modes:
         * `ManagedIdentityClientId` :
             * `system` : This will enable managed identity authentication for system assigned managed identity.
             * `<clientId>`:  Setting `ManagedIdentityClientId` to a specific clientId will enable managed identity authentication for user assigned managed identity.
+2. `AzCliAuth`
+    * This authentication mode will use the Azure CLI to authenticate. This authentication mode will only work when the application is running on a machine with Azure CLI installed and logged in. Accepted values `true` or `false`. Default value is `false`.
 
 ### Running tests
 
