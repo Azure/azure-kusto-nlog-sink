@@ -111,7 +111,6 @@ To run the tests locally, you need to have an ADX cluster created.
 
       ```powershell
         $env:CONNECTION_STRING="<connectionString>"
-        $env:AZURE_TENANT_ID="<tenant>"
         $env:DATABASE="<databaseName>"
       ```
 
@@ -119,7 +118,6 @@ To run the tests locally, you need to have an ADX cluster created.
 
       ```bash
         export CONNECTION_STRING="<connectionString>"
-        export AZURE_TENANT_ID="<tenant>"
         export DATABASE="<databaseName>"
       ```
 
