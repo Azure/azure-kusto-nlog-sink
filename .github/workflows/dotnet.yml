@@ -23,9 +23,6 @@ jobs:
       run: dotnet build src --no-restore
     - name: Test
       env:
-        INGEST_ENDPOINT : ${{secrets.INGEST_ENDPOINT}}
         DATABASE : ${{secrets.DATABASE}}
-        APP_ID : ${{secrets.APP_ID}}
-        APP_KEY : ${{secrets.APP_KEY}}
-        AZURE_TENANT_ID : ${{secrets.AZURE_TENANT_ID}}
+        CONNECTION_STRING : ${{secrets.CONNECTION_STRING}}
       run: dotnet test src --no-build --verbosity normal

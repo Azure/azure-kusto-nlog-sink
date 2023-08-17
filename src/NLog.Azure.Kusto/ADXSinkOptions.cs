@@ -9,7 +9,7 @@ namespace NLog.Azure.Kusto
     public class ADXSinkOptions
     {
         private const string AppName = "NLog.Azure.Kusto";
-        private const string ClientVersion = "1.1.0";
+        private const string ClientVersion = "2.0.0";
         private const string IngestPrefix = "ingest-";
         private const string ProtocolSuffix = "://";
 
@@ -48,9 +48,14 @@ namespace NLog.Azure.Kusto
         public bool FlushImmediately { get; set; }
 
         /// <summary>
-        /// ManagedIdentity ClientId in case of user-assigned identity
+        /// ManagedIdentity ClientId in case of user-assigned identity, set as 'system' for system-assigned identity
         /// </summary>
         public string ManagedIdentityClientId { get; set; }
+
+        /// <summary>
+        /// To use Azure Command line based authentication
+        /// </summary>
+        public bool AzCliAuth { get; set; }
 
         /// <summary>
         /// Override default application-name
@@ -81,6 +86,7 @@ namespace NLog.Azure.Kusto
             KustoConnectionStringBuilder.DefaultPreventAccessToLocalSecretsViaKeywords = false;
             var baseKcsb = new KustoConnectionStringBuilder(connectionUrl);
             var kcsb = string.IsNullOrEmpty(ManagedIdentityClientId) ? baseKcsb : ("system".Equals(ManagedIdentityClientId, StringComparison.OrdinalIgnoreCase) ? baseKcsb.WithAadSystemManagedIdentity() : baseKcsb.WithAadUserManagedIdentity(ManagedIdentityClientId));
+            kcsb = AzCliAuth ? kcsb.WithAadAzCliAuthentication() : kcsb;
             kcsb.ApplicationNameForTracing = AppName;
             kcsb.ClientVersionForTracing = ClientVersion;
             kcsb.SetConnectorDetails(AppName, ClientVersion, ApplicationName, ApplicationVersion ?? ClientVersion);

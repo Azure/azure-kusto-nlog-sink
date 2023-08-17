@@ -18,11 +18,8 @@ namespace NLog.Azure.Kusto.Tests
 
         public ADXSinkE2ETest()
         {
-            Assert.NotNull(Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? throw new ArgumentNullException("CONNECTION_STRING not set"));
-            Assert.NotNull(Environment.GetEnvironmentVariable("DATABASE") ?? throw new ArgumentNullException("DATABASE name not set"));
-
-            var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING");
-            var database = Environment.GetEnvironmentVariable("DATABASE");
+            var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? throw new ArgumentNullException("CONNECTION_STRING not set");
+            var database = Environment.GetEnvironmentVariable("DATABASE") ?? throw new ArgumentNullException("DATABASE name not set");
 
             KustoConnectionStringBuilder.DefaultPreventAccessToLocalSecretsViaKeywords = false;
             string dmConnectionStringEndpoint = connectionString.Contains("ingest-") ? connectionString : connectionString.ReplaceFirstOccurrence("://", "://ingest-");
@@ -35,7 +32,7 @@ namespace NLog.Azure.Kusto.Tests
 
             var randomInt = new Random().Next();
             m_generatedTableName = "ADXNlogSink_" + randomInt;
-
+            
             var command = CslCommandGenerator.GenerateTableCreateCommand(m_generatedTableName,
             new[]
             {
@@ -67,8 +64,8 @@ namespace NLog.Azure.Kusto.Tests
 
 
         [Theory]
-        [InlineData("Test_ADXTargetStreamed", 10, 7, 30000)]
-        [InlineData("Test_ADXNTargetBatched", 10, 7, 30000)]
+        [InlineData("Test_ADXTargetStreamed", 10, 12, 30000)]
+        [InlineData("Test_ADXNTargetBatched", 10, 12, 30000)]
         public async void Test_LogMessage(string testType, int numberOfLogs, int retries, int delayTime)
         {
             Logger logger = GetCustomLogger(testType);

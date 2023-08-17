@@ -16,14 +16,13 @@ This guide will help you in setting up and configuring the Azure Data Explorer T
 - Set the following environment variables in the sample application:
   - CONNECTION_STRING : Kusto ConnectionString of ADX cluster created. Eg: `Data Source=https://ingest-<clustername>.<region>.kusto.windows.net;Database=NetDefaultDB;Fed=True`
   - DATABASE : The name of the database to which data should be ingested into.
-  - AZURE_TENANT_ID : Tenant Id of the Azure Active Directory.
 
 ## Step 1: Install the ADX Target for NLog
 
 The ADX Target for NLog is available as a NuGet package. To install it, open the Package Manager Console and enter the following command:
 
 ```powershell
-Install-Package NLog.Azure.Kusto -Version 1.1.0
+Install-Package NLog.Azure.Kusto -Version 2.0.0
 ```
 
 ### Step 1.1: Configure the ADX Target for NLog

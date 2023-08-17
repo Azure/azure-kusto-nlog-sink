@@ -5,8 +5,8 @@
   <ItemGroup>
     <!--    add your PackageVersion nodes here -->
     <PackageVersion Include="Xunit.SkippableFact" Version="1.4.13" />
-    <PackageVersion Include="Microsoft.Azure.Kusto.Data" Version="11.3.1" />
-    <PackageVersion Include="Microsoft.Azure.Kusto.Ingest" Version="11.3.1" />
+    <PackageVersion Include="Microsoft.Azure.Kusto.Data" Version="11.3.3" />
+    <PackageVersion Include="Microsoft.Azure.Kusto.Ingest" Version="11.3.3" />
     <PackageVersion Include="Microsoft.IO.RecyclableMemoryStream" Version="2.3.2" />
     <PackageVersion Include="NLog" Version="5.1.4" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.6.0" />
