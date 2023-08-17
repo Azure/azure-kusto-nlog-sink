@@ -36,6 +36,7 @@ Open the configuration file and replace the existing target configuration one wi
   ConnectionString="<ADX connection string>"
   Database="<ADX database name>"
   TableName="<ADX table name>"
+  ApplicationClientId="<AAD App clientId>"
 />
 
 ##Rules

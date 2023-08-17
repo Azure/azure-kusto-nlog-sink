@@ -13,6 +13,7 @@ Install from [NuGet]():
 Install-Package NLog.Azure.Kusto
 ```
 
+
 ## Configuration
 
 Add the ADX target to your NLog configuration:
@@ -61,6 +62,9 @@ Add the ADX target to your NLog configuration:
 | QueueLimit                  | Gets or sets the limit on the number of requests in the lazy writer thread request queue (Default 10000)                                                                    |
 | OverflowAction              | Gets or sets the action (Discard, Grow, Block) to be taken when the lazy writer thread request queue count exceeds the set limit (Default Discard)                          |
 
+
+> `IngestionEndpointUri` is longer supported with Version 2.0.0, as it has been replaced by Connection String based authentication. Read more about [Kusto connection strings](https://learn.microsoft.com/azure/data-explorer/kusto/api/connection-strings/kusto)
+
 ### Mapping
 
 Azure Data Explorer provides data mapping capabilities, allowing the ability to extract data rom the ingested JSONs as part of the ingestion. This allows paying a one-time cost of processing the JSON during ingestion, and reduced cost at query time.
@@ -79,6 +83,17 @@ By default, the sink uses the following data mapping:
 This mapping can be overridden using the following options:
 
 * MappingNameRef: Use a data mapping configured in ADX.
+
+### Authentication
+
+Authentication will be taken according to the kusto connection string passed in the nlog target configuration.
+
+There are few cases to keep in mind for the following authentication modes:
+1. `Managed Identity Authentication`
+    * This authentication mode can be of two types System Assigned Managed Identity and User Assigned Managed Identity. In case of User Assigned Managed Identity, it requires the following properties to be set in the nlog target configuration::
+        * `ManagedIdentityClientId` :
+            * `system` : This will enable managed identity authentication for system assigned managed identity.
+            * `<clientId>`:  Setting `ManagedIdentityClientId` to a specific clientId will enable managed identity authentication for user assigned managed identity.
 
 ### Running tests
 
