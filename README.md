@@ -12,10 +12,10 @@ An Azure Data Explorer(ADX) custom target that writes log events to an [Azure Da
 
 ## Getting started
 
-Install from [NuGet]():
+Install from [NuGet](https://www.nuget.org/packages/NLog.Azure.Kusto):
 
 ```powershell
-Install-Package NLog.Azure.Kusto
+dotnet add package NLog.Azure.Kusto --version 2.0.1
 ```
 
 
@@ -47,7 +47,7 @@ Add the ADX target to your NLog configuration:
 
 | Destination Option          | Description                                                                                                                                                                 |
 |:----------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| ConnectionString            | Kusto connection string. Eg: `Data Source=https://ingest-<clustername>.<region>.kusto.windows.net;Database=NetDefaultDB;Fed=True`. Read about [Kusto Connection String](https://learn.microsoft.com/azure/data-explorer/kusto/api/connection-strings/kusto)                                          |
+| ConnectionString            | Kusto connection string. Eg: `Data Source=https://ingest-<clustername>.<region>.kusto.windows.net;Fed=True`. Read about [Kusto Connection String](https://learn.microsoft.com/azure/data-explorer/kusto/api/connection-strings/kusto)                                          |
 | Database                    | The name of the database to which data should be ingested into.                                                                                         |
 | TableName                   | The name of the table to which data should be ingested.                                                                                                                               |
 | ManagedIdentityClientId     | In case of ManagedIdentity Authentication, this need to be set for user assigned identity ("system" = SystemManagedIdentity)                                                |

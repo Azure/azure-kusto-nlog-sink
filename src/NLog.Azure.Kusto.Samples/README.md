@@ -3,7 +3,7 @@
 This guide will help you in setting up and configuring the Azure Data Explorer Target for NLog using sample application. You will learn how to write log messages and view them in Azure Data Explorer(ADX) cluster.
 
 ## Prerequisites
-
+- .Net 6.0 or higher
 - An ADX cluster and database. If you do not have one, [Create Azure Data Explorer Cluster and DB](https://docs.microsoft.com/en-us/azure/data-explorer/create-cluster-database-portal)
 - An Active Directory Application with Database Ingestor role. If you do not have one, [Create Azure Active Directory App Registration and grant it permissions to DB](https://docs.microsoft.com/en-us/azure/kusto/management/access-control/how-to-provision-aad-app) (Save the application ID and key for later).
 - Create a table in Azure Data Explorer to store logs. Following command can be used to create a table with the name "ADXNLogSample".
@@ -14,7 +14,7 @@ This guide will help you in setting up and configuring the Azure Data Explorer T
 
 - Clone the NLog-ADX Target git repo
 - Set the following environment variables in the sample application:
-  - CONNECTION_STRING : Kusto ConnectionString of ADX cluster created. Eg: `Data Source=https://ingest-<clustername>.<region>.kusto.windows.net;Database=NetDefaultDB;Fed=True`
+  - CONNECTION_STRING : Kusto ConnectionString of ADX cluster created. Eg: `Data Source=https://ingest-<clustername>.<region>.kusto.windows.net;Fed=True`
   - DATABASE : The name of the database to which data should be ingested into.
 
 ## Step 1: Install the ADX Target for NLog
@@ -22,7 +22,7 @@ This guide will help you in setting up and configuring the Azure Data Explorer T
 The ADX Target for NLog is available as a NuGet package. To install it, open the Package Manager Console and enter the following command:
 
 ```powershell
-Install-Package NLog.Azure.Kusto -Version 2.0.0
+dotnet add package NLog.Azure.Kusto --version 2.0.1
 ```
 
 ### Step 1.1: Configure the ADX Target for NLog
@@ -35,7 +35,6 @@ Open the configuration file and replace the existing target configuration one wi
   ConnectionString="<ADX connection string>"
   Database="<ADX database name>"
   TableName="<ADX table name>"
-  ApplicationClientId="<AAD App clientId>"
 />
 
 ##Rules

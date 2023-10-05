@@ -9,7 +9,7 @@ namespace NLog.Azure.Kusto
     public class ADXSinkOptions
     {
         private const string AppName = "NLog.Azure.Kusto";
-        private const string ClientVersion = "2.0.0";
+        private const string ClientVersion = "2.0.1";
         private const string IngestPrefix = "ingest-";
         private const string ProtocolSuffix = "://";
 
