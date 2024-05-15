@@ -48,12 +48,12 @@ Add the ADX target to your NLog configuration:
 | Destination Option          | Description                                                                                                                                                                 |
 |:----------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | ConnectionString            | Kusto connection string. Eg: `Data Source=https://ingest-<clustername>.<region>.kusto.windows.net;Fed=True`. Read about [Kusto Connection String](https://learn.microsoft.com/azure/data-explorer/kusto/api/connection-strings/kusto)                                          |
-| Database                    | The name of the database to which data should be ingested into.                                                                                         |
-| TableName                   | The name of the table to which data should be ingested.                                                                                                                               |
-| ManagedIdentityClientId     | In case of ManagedIdentity Authentication, this need to be set for user assigned identity ("system" = SystemManagedIdentity)                                                |
-| AzCliAuth              | Enable ADX connector to use Azure CLI authentication                                                                                 |
+| Database                    | The name of the database to which data should be ingested into.                                                                                                             |
+| TableName                   | The name of the table to which data should be ingested.                                                                                                                     |
+| AuthenticationType          | Override the Authentication style, instead of ConnectionString providing authentication details                                                                             |
+| ManagedIdentityClientId     | Provides the user assigned identity with `AuthenticationType` = AadUserManagedIdentity                                                                                      |
 | FlushImmediately            | In case queued ingestion is selected, this property determines if is needed to flush the data immediately to ADX cluster. Not recommended to enable for data with higher workloads. The default is false. |
-| MappingNameRef              | Use a data mapping configured in ADX.                                                                                        |
+| MappingNameRef              | Use a data mapping configured in ADX.                                                                                                                                       |
 | ApplicationName             | Override default application-name                                                                                                                                           |
 | ApplicationVersion          | Override default application-version                                                                                                                                        |
 
@@ -62,7 +62,7 @@ Add the ADX target to your NLog configuration:
 |:----------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Layout                      | Formatting of the ADX-event FormattedMessage. The default is: `${logger}${message}`                                                                                         |
 | IncludeEventProperties      | Include LogEvent Properties in the ADX-event. The default is true                                                                                                           |
-| ContextProperty             | Include additional ContextProperties in the ADX-event. The default is empty collection.                                                                                           |
+| ContextProperty             | Include additional ContextProperties in the ADX-event. The default is empty collection.                                                                                     |
 | BatchSize                   | Gets or sets the number of log events that should be processed in a batch by the lazy writer thread. (Default 1)                                                            |
 | TaskDelayMilliseconds       | How many milliseconds to delay the actual send payload operation to optimize for batching (Default 1 ms)                                                                    |
 | QueueLimit                  | Gets or sets the limit on the number of requests in the lazy writer thread request queue (Default 10000)                                                                    |
@@ -94,14 +94,17 @@ This mapping can be overridden using the following options:
 
 Authentication will be taken according to the kusto connection string passed in the nlog target configuration.
 
-There are few cases to keep in mind for the following authentication modes:
-1. `Managed Identity Authentication`
-    * This authentication mode can be of two types System Assigned Managed Identity and User Assigned Managed Identity. In case of User Assigned Managed Identity, it requires the following properties to be set in the nlog target configuration::
-        * `ManagedIdentityClientId` :
-            * `system` : This will enable managed identity authentication for system assigned managed identity.
-            * `<clientId>`:  Setting `ManagedIdentityClientId` to a specific clientId will enable managed identity authentication for user assigned managed identity.
-2. `AzCliAuth`
-    * This authentication mode will use the Azure CLI to authenticate. This authentication mode will only work when the application is running on a machine with Azure CLI installed and logged in. Accepted values `true` or `false`. Default value is `false`.
+It is also possible to assign `AuthenticationType` to override the authentication mode.
+
+| AuthenticationType        | Method                                     | Notes                                                   |
+|---------------------------|--------------------------------------------|---------------------------------------------------------|
+| None                      | Default Mode                               | ConnectionString provides authentication details        |
+| AadUserManagedIdentity    | WithAadUserManagedIdentity                 | Apply ManagedIdentityClientId as User Assigned Identity |
+| AadSystemManagedIdentity  | WithAadSystemManagedIdentity               | Apply System Assigned Managed Identity                  |
+| AadWorkloadIdentity       | WithAadAzureTokenCredentialsAuthentication | WorkloadIdentityCredential for Kubernetes or other hosts|
+| AddAzCli                  | WithAadAzCliAuthentication                 | Azure CLI Authentication                                |
+| AadUserPrompt             | WithAadAzureTokenCredentialsAuthentication | **Recommended only for development!**                   |
+
 
 ### Running tests
 
