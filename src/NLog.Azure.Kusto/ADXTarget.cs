@@ -103,44 +103,63 @@ namespace NLog.Azure.Kusto
         {
             using var datastream = CreateStreamFromLogEvents(logEvents);
 
-            var sourceId = Guid.NewGuid();
-            IKustoIngestionResult result;
-            if (m_streamingIngestion)
+            try
             {
-                result = await m_ingestClient.IngestFromStreamAsync(datastream, new KustoIngestionProperties(options.DatabaseName, options.TableName)
-                {
-                    DatabaseName = options.DatabaseName,
-                    TableName = options.TableName,
-                    Format = DataSourceFormat.multijson,
-                    IngestionMapping = m_ingestionMapping
-                }, new StreamSourceOptions
-                {
-                    SourceId = sourceId,
-                    CompressionType = DataSourceCompressionType.GZip
-                }).ConfigureAwait(false);
+                var sourceId = Guid.NewGuid();
+                IKustoIngestionResult result = await IngestFromStreamAsync(sourceId, datastream).ConfigureAwait(false);
             }
-            else
+            catch (global::Kusto.Data.Exceptions.KustoClientApplicationAuthenticationException ex)
             {
-                result = await m_ingestClient.IngestFromStreamAsync(datastream, new KustoQueuedIngestionProperties(options.DatabaseName, options.TableName)
+                NLog.Common.InternalLogger.Error(ex, "{0}: Authentication error. Please check your credentials.", this);
+                return; // Swallow exception to avoid retry
+            }
+            catch (global::Kusto.Ingest.Exceptions.IngestClientException ex)
+            {
+                if (ex.IsPermanent)
                 {
-                    DatabaseName = options.DatabaseName,
-                    TableName = options.TableName,
-                    Format = DataSourceFormat.multijson,
-                    IngestionMapping = m_ingestionMapping,
-                    FlushImmediately = options.FlushImmediately,
-                    ReportLevel = IngestionReportLevel.FailuresAndSuccesses,
-                    ReportMethod = IngestionReportMethod.Table
-                }, new StreamSourceOptions
-                {
-                    SourceId = sourceId,
-                    CompressionType = DataSourceCompressionType.GZip
-                }).ConfigureAwait(false);
+                    NLog.Common.InternalLogger.Error(ex, "{0}: Permanent ingestion failure to Kusto", this);
+                    return; // Swallow exception to avoid retry
+                }
+                throw;
             }
         }
 
         protected override Task WriteAsyncTask(LogEventInfo logEvent, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();    // Will never be hit, with override of WriteAsyncTask(IList<LogEventInfo> logEvents)
+        }
+
+        private Task<IKustoIngestionResult> IngestFromStreamAsync(Guid sourceId, Stream datastream)
+        {
+            if (m_streamingIngestion)
+            {
+                return m_ingestClient.IngestFromStreamAsync(datastream, new KustoIngestionProperties(options.DatabaseName, options.TableName)
+                {
+                    DatabaseName = options.DatabaseName,
+                    TableName = options.TableName,
+                    Format = DataSourceFormat.multijson,
+                    IngestionMapping = m_ingestionMapping,
+                }, new StreamSourceOptions
+                {
+                    SourceId = sourceId,
+                    CompressionType = DataSourceCompressionType.GZip
+                });
+            }
+            else
+            {
+                return m_ingestClient.IngestFromStreamAsync(datastream, new KustoQueuedIngestionProperties(options.DatabaseName, options.TableName)
+                {
+                    DatabaseName = options.DatabaseName,
+                    TableName = options.TableName,
+                    Format = DataSourceFormat.multijson,
+                    IngestionMapping = m_ingestionMapping,
+                    FlushImmediately = options.FlushImmediately,
+                }, new StreamSourceOptions
+                {
+                    SourceId = sourceId,
+                    CompressionType = DataSourceCompressionType.GZip
+                });
+            }
         }
 
         private Stream CreateStreamFromLogEvents(IList<LogEventInfo> batch)
