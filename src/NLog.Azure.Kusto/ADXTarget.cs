@@ -23,19 +23,78 @@ namespace NLog.Azure.Kusto
         private static readonly RecyclableMemoryStreamManager SRecyclableMemoryStreamManager = new RecyclableMemoryStreamManager();
         private readonly JsonLayout _jsonLayoutProperties = new JsonLayout() { IncludeEventProperties = true, MaxRecursionLimit = 10 };
 
+        /// <summary>
+        /// The name of the database to which data should be ingested to
+        /// </summary>
         [RequiredParameter]
         public string Database { get; set; }
+        /// <summary>
+        /// The name of the table to which data should be ingested to
+        /// </summary>
         [RequiredParameter]
         public string TableName { get; set; }
+        /// <summary>
+        /// Kusto connection string - Azure Data Explorer endpoint
+        /// </summary>
+        /// <remarks>
+        /// Refer: <see href="https://learn.microsoft.com/azure/data-explorer/kusto/api/connection-strings/kusto" />
+        /// </remarks>
         [RequiredParameter]
         public Layout ConnectionString { get; set; }
+        /// <summary>
+        /// Override default application-name
+        /// </summary>
         public Layout ApplicationName { get; set; }
+        /// <summary>
+        /// Override default application-version
+        /// </summary>
         public Layout ApplicationVersion { get; set; }
+        /// <summary>
+        /// Whether to use streaming ingestion (reduced latency, at the cost of reduced throughput) or queued ingestion (increased latency, but much higher throughput).
+        /// </summary>
         public string UseStreamingIngestion { get; set; } = "false";
-        public string ManagedIdentityClientId { get; set; }
-        public string AzCliAuth { get; set; } = "false";
+        /// <summary>
+        /// ManagedIdentity ClientId in case of user-assigned identity
+        /// </summary>
+        public string ManagedIdentityClientId
+        {
+            get => AuthenticationType == NLog.Azure.Kusto.AuthenticationType.AadSystemManagedIdentity ? "system" : _managedIdentityClientId;
+            set
+            {
+                if (string.Equals(value, "system", StringComparison.OrdinalIgnoreCase))
+                    AuthenticationType = NLog.Azure.Kusto.AuthenticationType.AadSystemManagedIdentity;
+                else if (!string.IsNullOrEmpty(value))
+                    AuthenticationType = NLog.Azure.Kusto.AuthenticationType.AadUserManagedIdentity;
+                else
+                    AuthenticationType = AuthenticationType != NLog.Azure.Kusto.AuthenticationType.AadUserManagedIdentity && AuthenticationType != NLog.Azure.Kusto.AuthenticationType.AadSystemManagedIdentity ? AuthenticationType : NLog.Azure.Kusto.AuthenticationType.None;
+                _managedIdentityClientId = value;
+            }
+        }
+        private string _managedIdentityClientId;
+        public string AzCliAuth
+        {
+            get => AuthenticationType == NLog.Azure.Kusto.AuthenticationType.AddAzCli ? "true" : "false";
+            set
+            {
+                if (string.Equals(value, "true", StringComparison.OrdinalIgnoreCase))
+                    AuthenticationType = NLog.Azure.Kusto.AuthenticationType.AddAzCli;
+                else
+                    AuthenticationType = AuthenticationType != NLog.Azure.Kusto.AuthenticationType.AddAzCli ? AuthenticationType : NLog.Azure.Kusto.AuthenticationType.None;
+            }
+        }
+        /// <summary>
+        /// This property determines whether it is needed to flush the data immediately to ADX cluster,
+        /// The default is false.
+        /// </summary>
         public string FlushImmediately { get; set; } = "false";
+        /// <summary>
+        /// The name of the (pre-created) data mapping to use for the ingested data
+        /// </summary>
         public string MappingNameRef { get; set; }
+        /// <summary>
+        /// Overrider default authentication-mode
+        /// </summary>
+        public Layout<AuthenticationType> AuthenticationType { get; set; } = NLog.Azure.Kusto.AuthenticationType.None;
 
         public ADXTarget()
         {
@@ -53,7 +112,7 @@ namespace NLog.Azure.Kusto
                 DatabaseName = RenderLogEvent(Database, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(nameof(Database)),
                 TableName = RenderLogEvent(TableName, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(nameof(TableName)),
                 ManagedIdentityClientId = RenderLogEvent(ManagedIdentityClientId, defaultLogEvent).NullIfEmpty(),
-                AzCliAuth = bool.Parse(RenderLogEvent(AzCliAuth, defaultLogEvent)),
+                AuthenticationType = RenderLogEvent(AuthenticationType, defaultLogEvent),
                 UseStreamingIngestion = bool.Parse(RenderLogEvent(UseStreamingIngestion, defaultLogEvent).NullIfEmpty() ?? "false"),
                 MappingName = RenderLogEvent(MappingNameRef, defaultLogEvent).NullIfEmpty(),
                 FlushImmediately = bool.Parse(RenderLogEvent(FlushImmediately, defaultLogEvent).NullIfEmpty() ?? "false"),

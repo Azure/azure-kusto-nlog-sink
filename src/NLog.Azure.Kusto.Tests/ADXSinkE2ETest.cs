@@ -66,7 +66,7 @@ namespace NLog.Azure.Kusto.Tests
         [Theory]
         [InlineData("Test_ADXTargetStreamed", 10, 12, 30000)]
         [InlineData("Test_ADXNTargetBatched", 10, 12, 30000)]
-        public async void Test_LogMessage(string testType, int numberOfLogs, int retries, int delayTime)
+        public async Task Test_LogMessage(string testType, int numberOfLogs, int retries, int delayTime)
         {
             Logger logger = GetCustomLogger(testType);
             if (logger == null) throw new Exception("Logger/Test type not supported");
@@ -103,8 +103,6 @@ namespace NLog.Azure.Kusto.Tests
                 }
                 Assert.Equal(3 * numberOfLogs, count);
                 Assert.Equal(numberOfLogs, finalExpCount);
-
-
             }
         }
 
