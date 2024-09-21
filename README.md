@@ -60,13 +60,13 @@ Add the ADX target to your NLog configuration:
 
 | Payload Option              | Description                                                                                                                                                                 |
 |:----------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Layout                      | Formatting of the ADX-event FormattedMessage. The default is: `${logger}${message}`                                                                                         |
-| IncludeEventProperties      | Include LogEvent Properties in the ADX-event. The default is true                                                                                                           |
+| Layout                      | Formatting of the ADX-event FormattedMessage. (Default = `${logger}|${message}`)                                                                                            |
+| IncludeEventProperties      | Include LogEvent Properties in the ADX-event. (Default = true)                                                                                                              |
 | ContextProperty             | Include additional ContextProperties in the ADX-event. The default is empty collection.                                                                                     |
-| BatchSize                   | Gets or sets the number of log events that should be processed in a batch by the lazy writer thread. (Default 1)                                                            |
-| TaskDelayMilliseconds       | How many milliseconds to delay the actual send payload operation to optimize for batching (Default 1 ms)                                                                    |
-| QueueLimit                  | Gets or sets the limit on the number of requests in the lazy writer thread request queue (Default 10000)                                                                    |
-| OverflowAction              | Gets or sets the action (Discard, Grow, Block) to be taken when the lazy writer thread request queue count exceeds the set limit (Default Discard)                          |
+| BatchSize                   | Gets or sets the number of log events that should be processed in a batch by the lazy writer thread. (Default = 100)                                                        |
+| TaskDelayMilliseconds       | How many milliseconds to delay the actual send payload operation to optimize for batching. (Default = 200 ms)                                                               |
+| QueueLimit                  | Gets or sets the limit on the number of requests in the lazy writer thread request queue. (Default = 10000)                                                                 |
+| OverflowAction              | Gets or sets the action (Discard, Grow, Block) to be taken when the lazy writer thread request queue count exceeds the set limit. (Default = Discard)                       |
 
 
 > `IngestionEndpointUri` is longer supported with Version 2.0.0, as it has been replaced by Connection String based authentication. Read more about [Kusto connection strings](https://learn.microsoft.com/azure/data-explorer/kusto/api/connection-strings/kusto)

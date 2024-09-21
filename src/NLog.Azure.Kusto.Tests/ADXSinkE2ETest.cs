@@ -118,7 +118,8 @@ namespace NLog.Azure.Kusto.Tests
                             Database = Environment.GetEnvironmentVariable("DATABASE") ?? throw new ArgumentNullException("DATABASE name not set"),
                             TableName = m_generatedTableName,
                             UseStreamingIngestion = "false",
-                            FlushImmediately = "true"
+                            FlushImmediately = "true",
+                            TaskDelayMilliseconds = 1,
                         };
                         var config = new LoggingConfiguration();
                         config.AddTarget("adxtarget", target);
@@ -134,7 +135,8 @@ namespace NLog.Azure.Kusto.Tests
                             ConnectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? throw new ArgumentNullException("CONNECTION_STRING not set"),
                             Database = Environment.GetEnvironmentVariable("DATABASE") ?? throw new ArgumentNullException("DATABASE name not set"),
                             TableName = m_generatedTableName,
-                            UseStreamingIngestion = "true"
+                            UseStreamingIngestion = "true",
+                            TaskDelayMilliseconds = 1,
                         };
                         var config = new LoggingConfiguration();
                         config.AddTarget("adxtarget", target);

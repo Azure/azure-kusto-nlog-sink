@@ -100,6 +100,8 @@ namespace NLog.Azure.Kusto
         {
             Layout = "${logger}|${message}";
             IncludeEventProperties = true;
+            BatchSize = 100;
+            TaskDelayMilliseconds = 200;
         }
 
         protected override void InitializeTarget()
