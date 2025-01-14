@@ -22,7 +22,7 @@ This guide will help you in setting up and configuring the Azure Data Explorer T
 The ADX Target for NLog is available as a NuGet package. To install it, open the Package Manager Console and enter the following command:
 
 ```powershell
-dotnet add package NLog.Azure.Kusto --version 2.1.0
+dotnet add package NLog.Azure.Kusto --version 3.0.0
 ```
 
 ### Step 1.1: Configure the ADX Target for NLog
