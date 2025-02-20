@@ -16,11 +16,11 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 6.0.x
+        dotnet-version: 8.0.x
     - name: Restore dependencies
       run: dotnet restore src
     - name: Build
-      run: dotnet build src --no-restore
+      run: dotnet build -c Release src --no-restore
     - name: Test
       env:
         DATABASE : ${{secrets.DATABASE}}

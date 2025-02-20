@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <RootNamespace> NLog.Azure.Kusto</RootNamespace>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>NLog.Azure.Kusto</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPublishable>True</IsPublishable>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
