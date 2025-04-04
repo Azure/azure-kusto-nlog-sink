@@ -25,4 +25,4 @@ jobs:
       env:
         DATABASE : ${{secrets.DATABASE}}
         CONNECTION_STRING : ${{secrets.CONNECTION_STRING}}
-      run: dotnet test src --no-build --verbosity normal
+      run: dotnet test src -c Release --no-build --verbosity normal

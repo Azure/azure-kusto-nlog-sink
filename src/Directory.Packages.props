@@ -7,8 +7,8 @@
     <PackageVersion Include="Microsoft.Azure.Kusto.Ingest" Version="13.0.2" />
     <PackageVersion Include="NLog" Version="5.2.5" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
-    <PackageVersion Include="xunit" Version="2.9.0" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2">
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.1">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageVersion>
