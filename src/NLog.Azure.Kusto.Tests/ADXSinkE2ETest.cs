@@ -47,7 +47,7 @@ namespace NLog.Azure.Kusto.Tests
             var alterBatchingPolicy = CslCommandGenerator.GenerateTableAlterIngestionBatchingPolicyCommand(
                 database,
                 m_generatedTableName,
-                new IngestionBatchingPolicy(TimeSpan.FromSeconds(1), 3, 1024));
+                new IngestionBatchingPolicy(TimeSpan.FromSeconds(10), 3, 1024));
 
             var enableStreamingIngestion = CslCommandGenerator.GenerateTableAlterStreamingIngestionPolicyCommand(
                 m_generatedTableName,
