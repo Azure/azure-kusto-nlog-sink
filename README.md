@@ -3,7 +3,7 @@
 An Azure Data Explorer(ADX) custom target that writes log events to an [Azure Data Explorer (Kusto)](https://docs.microsoft.com/en-us/azure/data-explorer) cluster.
 
 **Package** - [NLog.Azure.Kusto](http://nuget.org/packages/nlog.azure.kusto)
-| **Platforms** - .Net 6.0
+| **Platforms** - .Net 8.0
 
 > You can now use the Kusto NLog connector with [_**free Kusto cluster**_](https://learn.microsoft.com/azure/data-explorer/start-for-free-web-ui) and [_**Microsoft Fabric**_](https://www.microsoft.com/microsoft-fabric) cluster URLs by providing the cluster URL in the `ConnectionString` parameter of the `ADXTarget` configuration.
 
@@ -15,7 +15,7 @@ An Azure Data Explorer(ADX) custom target that writes log events to an [Azure Da
 Install from [NuGet](https://www.nuget.org/packages/NLog.Azure.Kusto):
 
 ```powershell
-dotnet add package NLog.Azure.Kusto --version 2.1.0
+dotnet add package NLog.Azure.Kusto --version 3.0.0
 ```
 
 

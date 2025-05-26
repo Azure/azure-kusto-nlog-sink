@@ -14,13 +14,19 @@ namespace NLog.Azure.Kusto
         public string Properties { get; set; }
         public static ADXLogEvent GetADXLogEvent(LogEventInfo logEventInfo, string renderedMessage, string renderedJsonProperties)
         {
+            var exception = logEventInfo.Exception;
+            if (exception is AggregateException aggregateException && aggregateException.InnerExceptions?.Count == 1 && !(aggregateException.InnerExceptions[0] is AggregateException))
+            {
+                exception = aggregateException.InnerExceptions[0];  // Minimal Flatten
+            }
+
             return new ADXLogEvent
             {
                 Level = logEventInfo.Level.ToString(),
                 Timestamp = logEventInfo.TimeStamp.ToUniversalTime(),
                 Message = logEventInfo.Message,
                 FormattedMessage = renderedMessage,
-                Exception = logEventInfo.Exception?.ToString(),
+                Exception = exception?.ToString(),
                 Properties = renderedJsonProperties,
             };
         }
