@@ -28,11 +28,9 @@ namespace NLog.Azure.Kusto.Tests
             m_kustoConnectionStringBuilder = new KustoConnectionStringBuilder(engineConnectionStringEndpoint);
             m_kustoConnectionStringBuilderDM = new KustoConnectionStringBuilder(dmConnectionStringEndpoint);
 
-            using ICslAdminProvider kustoClient = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder), kustoClientDM = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilderDM);
-
             var randomInt = new Random().Next();
             m_generatedTableName = "ADXNlogSink_" + randomInt;
-            
+
             var command = CslCommandGenerator.GenerateTableCreateCommand(m_generatedTableName,
             new[]
             {
@@ -55,20 +53,49 @@ namespace NLog.Azure.Kusto.Tests
 
             var refreshDmPolicies = CslCommandGenerator.GenerateDmRefreshPoliciesCommand();
 
-            kustoClient.ExecuteControlCommand(database, command);
-            kustoClient.ExecuteControlCommand(database, alterBatchingPolicy);
-            kustoClient.ExecuteControlCommand(database, enableStreamingIngestion);
-                
-            kustoClientDM.ExecuteControlCommand(database, ".refresh database '" + database + "' table '" + m_generatedTableName + "' cache ingestionbatchingpolicy");
+            WithTimeout("Setup Kusto", TimeSpan.FromSeconds(30), Task.Run(async () =>
+            {
+                using ICslAdminProvider kustoClient = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder);
+                using ICslAdminProvider kustoClientDM = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilderDM);
+
+                await WithTimeout("Create Kusto Tables", TimeSpan.FromSeconds(10), Task.Run(() =>
+                {
+                    kustoClient.ExecuteControlCommand(database, command);
+                }));
+                await WithTimeout("Alter Kusto Batching", TimeSpan.FromSeconds(10), Task.Run(() =>
+                {
+                    kustoClient.ExecuteControlCommand(database, alterBatchingPolicy);
+                }));
+                await WithTimeout("Alter Kusto Streaming", TimeSpan.FromSeconds(10), Task.Run(() =>
+                {
+                    kustoClient.ExecuteControlCommand(database, enableStreamingIngestion);
+                }));
+                await WithTimeout("Create Kusto-DM Tables ", TimeSpan.FromSeconds(10), Task.Run(() =>
+                {
+                    kustoClientDM.ExecuteControlCommand(database, ".refresh database '" + database + "' table '" + m_generatedTableName + "' cache ingestionbatchingpolicy");
+                }));
+            })).Wait();
         }
 
+        private static async Task WithTimeout(string operationName, TimeSpan timeout, Task task)
+        {
+            if (await Task.WhenAny(task, Task.Delay(timeout)) != task)
+                throw new TimeoutException(operationName);
+            await task.ConfigureAwait(false);
+        }
 
         [Theory]
-        [InlineData("Test_ADXTargetStreamed", 10, 12, 30000)]
-        [InlineData("Test_ADXNTargetBatched", 10, 12, 30000)]
-        public async Task Test_LogMessage(string testType, int numberOfLogs, int retries, int delayTime)
+        [InlineData("Test_ADXTargetStreamed", 10, 12, 5)]
+        [InlineData("Test_ADXNTargetBatched", 10, 12, 5)]
+        public async Task Test_LogMessage(string testType, int numberOfLogs, int retries, int delayTimeSecs)
         {
-            Logger logger = GetCustomLogger(testType);
+            Logger logger = null;
+
+            await WithTimeout("Create Kusto Logger", TimeSpan.FromSeconds(30), Task.Run(() =>
+            {
+                logger = GetCustomLogger(testType);
+            }));
+
             if (logger == null) throw new Exception("Logger/Test type not supported");
             for (int i = 0; i < numberOfLogs; i++)
             {
@@ -77,33 +104,36 @@ namespace NLog.Azure.Kusto.Tests
                 logger.Error(new Exception("{" + testType + "} : This is E2E Exception."));
             }
 
-            using (var kustoClient = KustoClientFactory.CreateCslQueryProvider(m_kustoConnectionStringBuilder))
+            await WithTimeout("Verify Kusto Logger", TimeSpan.FromSeconds((1 + retries) * delayTimeSecs), Task.Run(async () =>
             {
-                var finalExpCount = 0L;
-                var count = 0L;
-                IDataReader reader;
-                for (int i = 0; i < retries; i++)
+                using (var kustoClient = KustoClientFactory.CreateCslQueryProvider(m_kustoConnectionStringBuilder))
                 {
-                    await Task.Delay(delayTime);
-                    reader = kustoClient.ExecuteQuery(m_generatedTableName + " | where FormattedMessage contains \"" + testType + "\" | count; " +
-                        m_generatedTableName + " | where FormattedMessage contains \"" + testType + "\" and  not(isempty(Exception))  | count");
-                    while (reader.Read())
+                    var finalExpCount = 0L;
+                    var count = 0L;
+                    for (int i = 0; i < retries; i++)
                     {
-                        count = reader.GetInt64(0);
+                        await Task.Delay(TimeSpan.FromSeconds(delayTimeSecs));
+
+                        using var reader = kustoClient.ExecuteQuery(m_generatedTableName + " | where FormattedMessage contains \"" + testType + "\" | count; " +
+                            m_generatedTableName + " | where FormattedMessage contains \"" + testType + "\" and  not(isempty(Exception))  | count");
+                        while (reader.Read())
+                        {
+                            count = reader.GetInt64(0);
+                        }
+                        reader.NextResult();
+                        while (reader.Read())
+                        {
+                            finalExpCount = reader.GetInt64(0);
+                        }
+                        if (finalExpCount == numberOfLogs && count == (3 * numberOfLogs))
+                        {
+                            break;
+                        }
                     }
-                    reader.NextResult();
-                    while (reader.Read())
-                    {
-                        finalExpCount = reader.GetInt64(0);
-                    }
-                    if (finalExpCount == numberOfLogs && count == (3 * numberOfLogs))
-                    {
-                        break;
-                    }
+                    Assert.Equal(3 * numberOfLogs, count);
+                    Assert.Equal(numberOfLogs, finalExpCount);
                 }
-                Assert.Equal(3 * numberOfLogs, count);
-                Assert.Equal(numberOfLogs, finalExpCount);
-            }
+            }));
         }
 
         private Logger GetCustomLogger(string type)
@@ -114,6 +144,7 @@ namespace NLog.Azure.Kusto.Tests
                     {
                         var target = new ADXTarget
                         {
+                            Name = "adxtarget",
                             ConnectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? throw new ArgumentNullException("CONNECTION_STRING not set"),
                             Database = Environment.GetEnvironmentVariable("DATABASE") ?? throw new ArgumentNullException("DATABASE name not set"),
                             TableName = m_generatedTableName,
@@ -121,9 +152,7 @@ namespace NLog.Azure.Kusto.Tests
                             FlushImmediately = "true"
                         };
                         var config = new LoggingConfiguration();
-                        config.AddTarget("adxtarget", target);
-                        var rule = new LoggingRule("*", LogLevel.Debug, target);
-                        config.LoggingRules.Add(rule);
+                        config.AddRuleForAllLevels(target);
                         LogManager.Configuration = config;
                         return LogManager.GetLogger(type);
                     }
@@ -131,15 +160,14 @@ namespace NLog.Azure.Kusto.Tests
                     {
                         var target = new ADXTarget
                         {
+                            Name = "adxtarget",
                             ConnectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? throw new ArgumentNullException("CONNECTION_STRING not set"),
                             Database = Environment.GetEnvironmentVariable("DATABASE") ?? throw new ArgumentNullException("DATABASE name not set"),
                             TableName = m_generatedTableName,
                             UseStreamingIngestion = "true"
                         };
                         var config = new LoggingConfiguration();
-                        config.AddTarget("adxtarget", target);
-                        var rule = new LoggingRule("*", LogLevel.Debug, target);
-                        config.LoggingRules.Add(rule);
+                        config.AddRuleForAllLevels(target);
                         LogManager.Configuration = config;
                         return LogManager.GetLogger(type);
                     }
@@ -152,17 +180,19 @@ namespace NLog.Azure.Kusto.Tests
 
         public void Dispose()
         {
-            using (var queryProvider = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder))
+            WithTimeout("Dispose Kusto", TimeSpan.FromSeconds(30), Task.Run(() =>
             {
-                var command = CslCommandGenerator.GenerateTableDropCommand(m_generatedTableName);
-                var clientRequestProperties = new ClientRequestProperties()
+                using (var queryProvider = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder))
                 {
-                    ClientRequestId = Guid.NewGuid().ToString()
-                };
-                queryProvider.ExecuteControlCommand(Environment.GetEnvironmentVariable("DATABASE"), command,
-                    clientRequestProperties);
-            }
+                    var command = CslCommandGenerator.GenerateTableDropCommand(m_generatedTableName);
+                    var clientRequestProperties = new ClientRequestProperties()
+                    {
+                        ClientRequestId = Guid.NewGuid().ToString()
+                    };
+                    queryProvider.ExecuteControlCommand(Environment.GetEnvironmentVariable("DATABASE"), command,
+                        clientRequestProperties);
+                }
+            })).Wait();
         }
-
     }
 }
