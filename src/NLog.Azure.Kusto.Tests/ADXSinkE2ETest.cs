@@ -64,8 +64,8 @@ namespace NLog.Azure.Kusto.Tests
 
 
         [Theory]
-        [InlineData("Test_ADXTargetStreamed", 10, 12, 30000)]
-        [InlineData("Test_ADXNTargetBatched", 10, 12, 30000)]
+        [InlineData("Test_ADXTargetStreamed", 10, 12, 5000)]
+        [InlineData("Test_ADXNTargetBatched", 10, 12, 5000)]
         public async Task Test_LogMessage(string testType, int numberOfLogs, int retries, int delayTime)
         {
             Logger logger = GetCustomLogger(testType);
