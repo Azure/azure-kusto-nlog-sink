@@ -53,24 +53,24 @@ namespace NLog.Azure.Kusto.Tests
 
             var refreshDmPolicies = CslCommandGenerator.GenerateDmRefreshPoliciesCommand();
 
-            WithTimeout("Setup Kusto", TimeSpan.FromSeconds(30), Task.Run(async () =>
+            WithTimeout("Setup Kusto", TimeSpan.FromSeconds(180), Task.Run(async () =>
             {
                 using ICslAdminProvider kustoClient = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder);
                 using ICslAdminProvider kustoClientDM = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilderDM);
 
-                await WithTimeout("Create Kusto Tables", TimeSpan.FromSeconds(10), Task.Run(() =>
+                await WithTimeout("Create Kusto Tables", TimeSpan.FromSeconds(120), Task.Run(() =>
                 {
                     kustoClient.ExecuteControlCommand(database, command);
                 }));
-                await WithTimeout("Alter Kusto Batching", TimeSpan.FromSeconds(10), Task.Run(() =>
+                await WithTimeout("Alter Kusto Batching", TimeSpan.FromSeconds(120), Task.Run(() =>
                 {
                     kustoClient.ExecuteControlCommand(database, alterBatchingPolicy);
                 }));
-                await WithTimeout("Alter Kusto Streaming", TimeSpan.FromSeconds(10), Task.Run(() =>
+                await WithTimeout("Alter Kusto Streaming", TimeSpan.FromSeconds(120), Task.Run(() =>
                 {
                     kustoClient.ExecuteControlCommand(database, enableStreamingIngestion);
                 }));
-                await WithTimeout("Create Kusto-DM Tables ", TimeSpan.FromSeconds(10), Task.Run(() =>
+                await WithTimeout("Create Kusto-DM Tables ", TimeSpan.FromSeconds(120), Task.Run(() =>
                 {
                     kustoClientDM.ExecuteControlCommand(database, ".refresh database '" + database + "' table '" + m_generatedTableName + "' cache ingestionbatchingpolicy");
                 }));
@@ -180,7 +180,7 @@ namespace NLog.Azure.Kusto.Tests
 
         public void Dispose()
         {
-            WithTimeout("Dispose Kusto", TimeSpan.FromSeconds(30), Task.Run(() =>
+            WithTimeout("Dispose Kusto", TimeSpan.FromSeconds(60), Task.Run(() =>
             {
                 using (var queryProvider = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder))
                 {
