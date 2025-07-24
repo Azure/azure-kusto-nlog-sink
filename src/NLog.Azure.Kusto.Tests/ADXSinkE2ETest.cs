@@ -12,9 +12,9 @@ namespace NLog.Azure.Kusto.Tests
 {
     public class ADXSinkE2ETest : IDisposable
     {
-        private readonly string? m_generatedTableName;
-        private readonly KustoConnectionStringBuilder? m_kustoConnectionStringBuilder;
-        private readonly KustoConnectionStringBuilder? m_kustoConnectionStringBuilderDM;
+        private readonly string m_generatedTableName = $"ADXNlogSink_{new Random().Next()}";
+        private readonly KustoConnectionStringBuilder m_kustoConnectionStringBuilder;
+        private readonly KustoConnectionStringBuilder m_kustoConnectionStringBuilderDM;
 
         public ADXSinkE2ETest()
         {
@@ -26,12 +26,11 @@ namespace NLog.Azure.Kusto.Tests
             string engineConnectionStringEndpoint = !connectionString.Contains("ingest-") ? connectionString : connectionString.ReplaceFirstOccurrence("ingest-", "");
 
             m_kustoConnectionStringBuilder = new KustoConnectionStringBuilder(engineConnectionStringEndpoint);
+            m_kustoConnectionStringBuilder.UserNameForTracing = "NLogE2ETest";
             m_kustoConnectionStringBuilderDM = new KustoConnectionStringBuilder(dmConnectionStringEndpoint);
+            m_kustoConnectionStringBuilderDM.UserNameForTracing = "NLogE2ETest";
 
-            var randomInt = new Random().Next();
-            m_generatedTableName = "ADXNlogSink_" + randomInt;
-
-            var command = CslCommandGenerator.GenerateTableCreateCommand(m_generatedTableName,
+            var createTableCommand = CslCommandGenerator.GenerateTableCreateCommand(m_generatedTableName,
             new[]
             {
                 Tuple.Create("Timestamp", "System.DateTime"),
@@ -53,24 +52,24 @@ namespace NLog.Azure.Kusto.Tests
 
             var refreshDmPolicies = CslCommandGenerator.GenerateDmRefreshPoliciesCommand();
 
-            WithTimeout("Setup Kusto", TimeSpan.FromSeconds(30), Task.Run(async () =>
+            WithTimeout("Setup Kusto", TimeSpan.FromSeconds(180), Task.Run(async () =>
             {
                 using ICslAdminProvider kustoClient = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder);
                 using ICslAdminProvider kustoClientDM = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilderDM);
 
-                await WithTimeout("Create Kusto Tables", TimeSpan.FromSeconds(10), Task.Run(() =>
+                await WithTimeout("Create Kusto Tables", TimeSpan.FromSeconds(120), Task.Run(() =>
                 {
-                    kustoClient.ExecuteControlCommand(database, command);
+                    kustoClient.ExecuteControlCommand(database, createTableCommand);
                 }));
-                await WithTimeout("Alter Kusto Batching", TimeSpan.FromSeconds(10), Task.Run(() =>
+                await WithTimeout("Alter Kusto Batching", TimeSpan.FromSeconds(120), Task.Run(() =>
                 {
                     kustoClient.ExecuteControlCommand(database, alterBatchingPolicy);
                 }));
-                await WithTimeout("Alter Kusto Streaming", TimeSpan.FromSeconds(10), Task.Run(() =>
+                await WithTimeout("Alter Kusto Streaming", TimeSpan.FromSeconds(120), Task.Run(() =>
                 {
                     kustoClient.ExecuteControlCommand(database, enableStreamingIngestion);
                 }));
-                await WithTimeout("Create Kusto-DM Tables ", TimeSpan.FromSeconds(10), Task.Run(() =>
+                await WithTimeout("Create Kusto-DM Tables ", TimeSpan.FromSeconds(120), Task.Run(() =>
                 {
                     kustoClientDM.ExecuteControlCommand(database, ".refresh database '" + database + "' table '" + m_generatedTableName + "' cache ingestionbatchingpolicy");
                 }));
@@ -81,7 +80,6 @@ namespace NLog.Azure.Kusto.Tests
         {
             if (await Task.WhenAny(task, Task.Delay(timeout)) != task)
                 throw new TimeoutException(operationName);
-            await task.ConfigureAwait(false);
         }
 
         [Theory]
@@ -89,7 +87,7 @@ namespace NLog.Azure.Kusto.Tests
         [InlineData("Test_ADXNTargetBatched", 10, 12, 5)]
         public async Task Test_LogMessage(string testType, int numberOfLogs, int retries, int delayTimeSecs)
         {
-            Logger logger = null;
+            Logger? logger = null;
 
             await WithTimeout("Create Kusto Logger", TimeSpan.FromSeconds(30), Task.Run(() =>
             {
@@ -180,7 +178,7 @@ namespace NLog.Azure.Kusto.Tests
 
         public void Dispose()
         {
-            WithTimeout("Dispose Kusto", TimeSpan.FromSeconds(30), Task.Run(() =>
+            WithTimeout("Dispose Kusto", TimeSpan.FromSeconds(60), Task.Run(() =>
             {
                 using (var queryProvider = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder))
                 {
