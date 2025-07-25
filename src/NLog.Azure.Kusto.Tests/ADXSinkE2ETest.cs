@@ -89,49 +89,68 @@ namespace NLog.Azure.Kusto.Tests
         {
             Logger? logger = null;
 
-            await WithTimeout("Create Kusto Logger", TimeSpan.FromSeconds(30), Task.Run(() =>
-            {
-                logger = GetCustomLogger(testType);
-            }));
+            var stringWriter = new StringWriter();
+            NLog.Common.InternalLogger.LogWriter = stringWriter;
+            NLog.Common.InternalLogger.LogLevel = LogLevel.Warn;
 
-            if (logger == null) throw new Exception("Logger/Test type not supported");
-            for (int i = 0; i < numberOfLogs; i++)
+            try
             {
-                logger.Info("{type} Processed Info log {i}", testType, i);
-                logger.Debug("{type} Processed debug Log {i}", testType, i);
-                logger.Error(new Exception("{" + testType + "} : This is E2E Exception."));
-            }
-
-            await WithTimeout("Verify Kusto Logger", TimeSpan.FromSeconds((1 + retries) * delayTimeSecs), Task.Run(async () =>
-            {
-                using (var kustoClient = KustoClientFactory.CreateCslQueryProvider(m_kustoConnectionStringBuilder))
+                await WithTimeout("Create Kusto Logger", TimeSpan.FromSeconds(30), Task.Run(() =>
                 {
-                    var finalExpCount = 0L;
-                    var count = 0L;
-                    for (int i = 0; i < retries; i++)
-                    {
-                        await Task.Delay(TimeSpan.FromSeconds(delayTimeSecs));
+                    logger = GetCustomLogger(testType);
+                }));
 
-                        using var reader = kustoClient.ExecuteQuery(m_generatedTableName + " | where FormattedMessage contains \"" + testType + "\" | count; " +
-                            m_generatedTableName + " | where FormattedMessage contains \"" + testType + "\" and  not(isempty(Exception))  | count");
-                        while (reader.Read())
-                        {
-                            count = reader.GetInt64(0);
-                        }
-                        reader.NextResult();
-                        while (reader.Read())
-                        {
-                            finalExpCount = reader.GetInt64(0);
-                        }
-                        if (finalExpCount == numberOfLogs && count == (3 * numberOfLogs))
-                        {
-                            break;
-                        }
-                    }
-                    Assert.Equal(3 * numberOfLogs, count);
-                    Assert.Equal(numberOfLogs, finalExpCount);
+                if (logger == null) throw new Exception("Logger/Test type not supported");
+
+                for (int i = 0; i < numberOfLogs; i++)
+                {
+                    logger.Info("{type} Processed Info log {i}", testType, i);
+                    logger.Debug("{type} Processed debug Log {i}", testType, i);
+                    logger.Error(new Exception("{" + testType + "} : This is E2E Exception."));
                 }
-            }));
+
+                await WithTimeout("Verify Kusto Logger", TimeSpan.FromSeconds(retries * delayTimeSecs + 120), Task.Run(async () =>
+                {
+                    using (var kustoClient = KustoClientFactory.CreateCslQueryProvider(m_kustoConnectionStringBuilder))
+                    {
+                        var finalExpCount = 0L;
+                        var count = 0L;
+                        for (int i = 0; i < retries; i++)
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(delayTimeSecs));
+
+                            using var reader = kustoClient.ExecuteQuery(m_generatedTableName + " | where FormattedMessage contains \"" + testType + "\" | count; " +
+                                m_generatedTableName + " | where FormattedMessage contains \"" + testType + "\" and  not(isempty(Exception))  | count");
+                            while (reader.Read())
+                            {
+                                count = reader.GetInt64(0);
+                            }
+                            reader.NextResult();
+                            while (reader.Read())
+                            {
+                                finalExpCount = reader.GetInt64(0);
+                            }
+                            if (finalExpCount == numberOfLogs && count == (3 * numberOfLogs))
+                            {
+                                break;
+                            }
+                        }
+                        Assert.Equal(3 * numberOfLogs, count);
+                        Assert.Equal(numberOfLogs, finalExpCount);
+                    }
+                }));
+            }
+            catch (Exception exception)
+            {
+                var nlogOutput = stringWriter.ToString();
+                if (string.IsNullOrEmpty(nlogOutput))
+                    throw;
+                throw new Exception(nlogOutput, exception);
+            }
+            finally
+            {
+                NLog.Common.InternalLogger.LogWriter = null;
+            }
         }
 
         private Logger GetCustomLogger(string type)
@@ -178,7 +197,7 @@ namespace NLog.Azure.Kusto.Tests
 
         public void Dispose()
         {
-            WithTimeout("Dispose Kusto", TimeSpan.FromSeconds(60), Task.Run(() =>
+            WithTimeout("Dispose Kusto", TimeSpan.FromSeconds(120), Task.Run(() =>
             {
                 using (var queryProvider = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder))
                 {
