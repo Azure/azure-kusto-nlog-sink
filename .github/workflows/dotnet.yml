@@ -10,6 +10,7 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    environment: e2e
 
     steps:
     - uses: actions/checkout@v2
@@ -23,6 +24,6 @@ jobs:
       run: dotnet build -c Release src --no-restore
     - name: Test
       env:
-        DATABASE : ${{secrets.DATABASE}}
-        CONNECTION_STRING : ${{secrets.CONNECTION_STRING}}
+        DATABASE : ${{vars.DATABASE}}
+        CONNECTION_STRING : ${{vars.CONNECTION_STRING}}
       run: dotnet test src -c Release --no-build --verbosity normal
