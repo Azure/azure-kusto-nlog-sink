@@ -26,12 +26,10 @@ namespace NLog.Azure.Kusto
         /// <summary>
         /// The name of the database to which data should be ingested to
         /// </summary>
-        [RequiredParameter]
         public string Database { get; set; }
         /// <summary>
         /// The name of the table to which data should be ingested to
         /// </summary>
-        [RequiredParameter]
         public string TableName { get; set; }
         /// <summary>
         /// Kusto connection string - Azure Data Explorer endpoint
@@ -39,7 +37,6 @@ namespace NLog.Azure.Kusto
         /// <remarks>
         /// Refer: <see href="https://learn.microsoft.com/azure/data-explorer/kusto/api/connection-strings/kusto" />
         /// </remarks>
-        [RequiredParameter]
         public Layout ConnectionString { get; set; }
         /// <summary>
         /// Override default application-name
@@ -107,11 +104,19 @@ namespace NLog.Azure.Kusto
         {
             base.InitializeTarget();
             var defaultLogEvent = LogEventInfo.CreateNullEvent();
+            // Validate required properties
+            if (ConnectionString == null || string.IsNullOrWhiteSpace(RenderLogEvent(ConnectionString, defaultLogEvent)))
+                throw new ArgumentNullException(nameof(ConnectionString), "ConnectionString is required.");
+            if (string.IsNullOrWhiteSpace(Database))
+                throw new ArgumentNullException(nameof(Database), "Database is required.");
+            if (string.IsNullOrWhiteSpace(TableName))
+                throw new ArgumentNullException(nameof(TableName), "TableName is required.");
+
             options = new ADXSinkOptions
             {
-                ConnectionString = RenderLogEvent(ConnectionString, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(nameof(ConnectionString)),
-                DatabaseName = RenderLogEvent(Database, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(nameof(Database)),
-                TableName = RenderLogEvent(TableName, defaultLogEvent).NullIfEmpty() ?? throw new ArgumentNullException(nameof(TableName)),
+                ConnectionString = RenderLogEvent(ConnectionString, defaultLogEvent),
+                DatabaseName = RenderLogEvent(Database, defaultLogEvent),
+                TableName = RenderLogEvent(TableName, defaultLogEvent),
                 ManagedIdentityClientId = RenderLogEvent(ManagedIdentityClientId, defaultLogEvent).NullIfEmpty(),
                 AuthenticationType = RenderLogEvent(AuthenticationType, defaultLogEvent),
                 UseStreamingIngestion = bool.Parse(RenderLogEvent(UseStreamingIngestion, defaultLogEvent).NullIfEmpty() ?? "false"),
