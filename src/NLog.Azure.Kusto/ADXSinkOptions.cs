@@ -48,7 +48,7 @@ namespace NLog.Azure.Kusto
             // The connection string in most circumstances will not be an ingest endpoint. Just adding a double check on this.
             string dmConnectionStringEndpoint = ConnectionString.Contains(IngestPrefix) ? ConnectionString : ConnectionString.ReplaceFirstOccurrence(ProtocolSuffix, ProtocolSuffix + IngestPrefix);
             // For ingest we need not have all the options
-            return GetKcsbWithAuthentication(dmConnectionStringEndpoint.Split("?")[0]);
+            return GetKcsbWithAuthentication(dmConnectionStringEndpoint.Split('?')[0]);
         }
 
         public KustoConnectionStringBuilder GetEngineKcsb()
