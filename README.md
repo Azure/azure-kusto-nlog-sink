@@ -15,7 +15,7 @@ An Azure Data Explorer(ADX) custom target that writes log events to an [Azure Da
 Install from [NuGet](https://www.nuget.org/packages/NLog.Azure.Kusto):
 
 ```powershell
-dotnet add package NLog.Azure.Kusto --version 3.0.0
+dotnet add package NLog.Azure.Kusto --version 3.1.0
 ```
 
 
