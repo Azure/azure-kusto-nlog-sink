@@ -15,6 +15,7 @@ namespace NLog.Azure.Kusto.Tests
         private readonly string m_generatedTableName = $"ADXNlogSink_{new Random().Next()}";
         private readonly KustoConnectionStringBuilder m_kustoConnectionStringBuilder;
         private readonly KustoConnectionStringBuilder m_kustoConnectionStringBuilderDM;
+        private readonly bool m_setupSucceeded;
 
         public ADXSinkE2ETest()
         {
@@ -52,28 +53,37 @@ namespace NLog.Azure.Kusto.Tests
 
             var refreshDmPolicies = CslCommandGenerator.GenerateDmRefreshPoliciesCommand();
 
-            WithTimeout("Setup Kusto", TimeSpan.FromSeconds(180), Task.Run(async () =>
+            try
             {
-                using ICslAdminProvider kustoClient = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder);
-                using ICslAdminProvider kustoClientDM = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilderDM);
+                WithTimeout("Setup Kusto", TimeSpan.FromSeconds(180), Task.Run(async () =>
+                {
+                    using ICslAdminProvider kustoClient = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder);
+                    using ICslAdminProvider kustoClientDM = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilderDM);
 
-                await WithTimeout("Create Kusto Tables", TimeSpan.FromSeconds(120), Task.Run(() =>
-                {
-                    kustoClient.ExecuteControlCommand(database, createTableCommand);
-                }));
-                await WithTimeout("Alter Kusto Batching", TimeSpan.FromSeconds(120), Task.Run(() =>
-                {
-                    kustoClient.ExecuteControlCommand(database, alterBatchingPolicy);
-                }));
-                await WithTimeout("Alter Kusto Streaming", TimeSpan.FromSeconds(120), Task.Run(() =>
-                {
-                    kustoClient.ExecuteControlCommand(database, enableStreamingIngestion);
-                }));
-                await WithTimeout("Create Kusto-DM Tables ", TimeSpan.FromSeconds(120), Task.Run(() =>
-                {
-                    kustoClientDM.ExecuteControlCommand(database, ".refresh database '" + database + "' table '" + m_generatedTableName + "' cache ingestionbatchingpolicy");
-                }));
-            })).Wait();
+                    await WithTimeout("Create Kusto Tables", TimeSpan.FromSeconds(120), Task.Run(() =>
+                    {
+                        kustoClient.ExecuteControlCommand(database, createTableCommand);
+                    }));
+                    await WithTimeout("Alter Kusto Batching", TimeSpan.FromSeconds(120), Task.Run(() =>
+                    {
+                        kustoClient.ExecuteControlCommand(database, alterBatchingPolicy);
+                    }));
+                    await WithTimeout("Alter Kusto Streaming", TimeSpan.FromSeconds(120), Task.Run(() =>
+                    {
+                        kustoClient.ExecuteControlCommand(database, enableStreamingIngestion);
+                    }));
+                    await WithTimeout("Create Kusto-DM Tables ", TimeSpan.FromSeconds(120), Task.Run(() =>
+                    {
+                        kustoClientDM.ExecuteControlCommand(database, ".refresh database '" + database + "' table '" + m_generatedTableName + "' cache ingestionbatchingpolicy");
+                    }));
+                })).Wait();
+                m_setupSucceeded = true;
+            }
+            catch (Exception ex)
+            {
+                m_setupSucceeded = false;
+                System.Diagnostics.Trace.WriteLine($"ADXSinkE2ETest setup failed: {ex.Message}");
+            }
         }
 
         private static async Task WithTimeout(string operationName, TimeSpan timeout, Task task)
@@ -87,6 +97,8 @@ namespace NLog.Azure.Kusto.Tests
         [InlineData("Test_ADXNTargetBatched", 10, 12, 5)]
         public async Task Test_LogMessage(string testType, int numberOfLogs, int retries, int delayTimeSecs)
         {
+            Assert.True(m_setupSucceeded, "Skipping test — ADX cluster setup failed (cluster may be unreachable)");
+
             Logger? logger = null;
 
             var stringWriter = new StringWriter();
@@ -197,19 +209,29 @@ namespace NLog.Azure.Kusto.Tests
 
         public void Dispose()
         {
-            WithTimeout("Dispose Kusto", TimeSpan.FromSeconds(120), Task.Run(() =>
+            try
             {
-                using (var queryProvider = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder))
+                if (!m_setupSucceeded)
+                    return;
+
+                WithTimeout("Dispose Kusto", TimeSpan.FromSeconds(30), Task.Run(() =>
                 {
-                    var command = CslCommandGenerator.GenerateTableDropCommand(m_generatedTableName);
-                    var clientRequestProperties = new ClientRequestProperties()
+                    using (var queryProvider = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder))
                     {
-                        ClientRequestId = Guid.NewGuid().ToString()
-                    };
-                    queryProvider.ExecuteControlCommand(Environment.GetEnvironmentVariable("DATABASE"), command,
-                        clientRequestProperties);
-                }
-            })).Wait();
+                        var command = CslCommandGenerator.GenerateTableDropCommand(m_generatedTableName);
+                        var clientRequestProperties = new ClientRequestProperties()
+                        {
+                            ClientRequestId = Guid.NewGuid().ToString()
+                        };
+                        queryProvider.ExecuteControlCommand(Environment.GetEnvironmentVariable("DATABASE"), command,
+                            clientRequestProperties);
+                    }
+                })).Wait();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine($"ADXSinkE2ETest cleanup failed (non-fatal): {ex.Message}");
+            }
         }
     }
 }
