@@ -6,7 +6,6 @@ using Kusto.Ingest;
 using Kusto.Data;
 using Kusto.Data.Common;
 using Microsoft.IO;
-using NLog.Config;
 using NLog.Layouts;
 using NLog.Targets;
 
@@ -26,12 +25,10 @@ namespace NLog.Azure.Kusto
         /// <summary>
         /// The name of the database to which data should be ingested to
         /// </summary>
-        [RequiredParameter]
         public string Database { get; set; }
         /// <summary>
         /// The name of the table to which data should be ingested to
         /// </summary>
-        [RequiredParameter]
         public string TableName { get; set; }
         /// <summary>
         /// Kusto connection string - Azure Data Explorer endpoint
@@ -39,7 +36,6 @@ namespace NLog.Azure.Kusto
         /// <remarks>
         /// Refer: <see href="https://learn.microsoft.com/azure/data-explorer/kusto/api/connection-strings/kusto" />
         /// </remarks>
-        [RequiredParameter]
         public Layout ConnectionString { get; set; }
         /// <summary>
         /// Override default application-name
