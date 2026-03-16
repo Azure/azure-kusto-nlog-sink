@@ -1,4 +1,4 @@
-name: .NET
+name: .NET Build and Test
 
 on:
   push:
@@ -15,7 +15,6 @@ jobs:
 
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    environment: e2e
 
     steps:
     - uses: actions/checkout@v4
