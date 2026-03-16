@@ -30,7 +30,7 @@ jobs:
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
     - name: Get Access Token
       run: |
-        access_token=$(az account get-access-token --resource=${{ secrets.APP_ID }} --scope=${{ secrets.CLUSTER }}/.default --query accessToken -o tsv)
+        access_token=$(az account get-access-token --scope=${{ secrets.CLUSTER }}/.default --query accessToken -o tsv)
         echo "ACCESS_TOKEN=$access_token" >> $GITHUB_ENV
     - name: Restore dependencies
       run: dotnet restore src

@@ -92,7 +92,7 @@ namespace NLog.Azure.Kusto
         /// </summary>
         public string MappingNameRef { get; set; }
         /// <summary>
-        /// Overrider default authentication-mode
+        /// Override default authentication-mode
         /// </summary>
         public Layout<AuthenticationType> AuthenticationType { get; set; } = NLog.Azure.Kusto.AuthenticationType.None;
         /// <summary>
@@ -105,8 +105,7 @@ namespace NLog.Azure.Kusto
         {
             Layout = "${logger}|${message}";
             IncludeEventProperties = true;
-            RetryCount = 5;
-            RetryDelayMilliseconds = 3000;
+            RetryDelayMilliseconds = 50;    // Overwrite the default of 500ms
         }
 
         protected override void InitializeTarget()
@@ -128,9 +127,9 @@ namespace NLog.Azure.Kusto
                 AccessToken = RenderLogEvent(AccessToken, defaultLogEvent).NullIfEmpty(),
             };
 
-            if (!string.IsNullOrEmpty(options.AccessToken) && options.AuthenticationType == NLog.Azure.Kusto.AuthenticationType.None)
+            if (options.AuthenticationType == NLog.Azure.Kusto.AuthenticationType.AadAccessToken && string.IsNullOrEmpty(options.AccessToken))
             {
-                options.AuthenticationType = NLog.Azure.Kusto.AuthenticationType.AadAccessToken;
+                throw new NLogConfigurationException("AuthenticationType 'AadAccessToken' requires a non-empty AccessToken.");
             }
 
             m_streamingIngestion = options.UseStreamingIngestion;
