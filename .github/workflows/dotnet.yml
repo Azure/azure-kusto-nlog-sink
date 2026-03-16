@@ -7,8 +7,24 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  build-and-unit-test:
+    runs-on: ubuntu-latest
 
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 8.0.x
+    - name: Restore dependencies
+      run: dotnet restore src
+    - name: Build
+      run: dotnet build -c Release src --no-restore
+    - name: Unit Tests
+      run: dotnet test src/NLog.Azure.Kusto.Tests/NLog.Azure.Kusto.Tests.csproj -c Release --no-build --filter "FullyQualifiedName~ADXTargetTest" --verbosity normal
+
+  e2e-test:
+    needs: build-and-unit-test
     runs-on: ubuntu-latest
     environment: e2e
 
@@ -22,8 +38,8 @@ jobs:
       run: dotnet restore src
     - name: Build
       run: dotnet build -c Release src --no-restore
-    - name: Test
+    - name: E2E Tests
       env:
         DATABASE : ${{vars.DATABASE}}
         CONNECTION_STRING : ${{vars.CONNECTION_STRING}}
-      run: dotnet test src -c Release --no-build --verbosity normal
+      run: dotnet test src/NLog.Azure.Kusto.Tests/NLog.Azure.Kusto.Tests.csproj -c Release --no-build --filter "FullyQualifiedName~ADXSinkE2ETest" --verbosity normal

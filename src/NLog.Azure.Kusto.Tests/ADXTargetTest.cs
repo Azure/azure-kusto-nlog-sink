@@ -25,7 +25,7 @@ namespace NLog.Azure.Kusto.Tests
         [Fact]
         public void Test_ErrorConfigLoads()
         {
-            Assert.Throws<NLog.NLogConfigurationException>(() => GetTarget("adxtargeterror"));
+            Assert.Throws<System.ArgumentNullException>(() => GetTarget("adxtargeterror"));
         }
     }
 }

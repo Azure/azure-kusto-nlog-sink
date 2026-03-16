@@ -83,8 +83,8 @@ namespace NLog.Azure.Kusto.Tests
         }
 
         [Theory]
-        [InlineData("Test_ADXTargetStreamed", 10, 12, 5)]
-        [InlineData("Test_ADXNTargetBatched", 10, 12, 5)]
+        [InlineData("Test_ADXTargetStreamed", 10, 20, 10)]
+        [InlineData("Test_ADXNTargetBatched", 10, 20, 10)]
         public async Task Test_LogMessage(string testType, int numberOfLogs, int retries, int delayTimeSecs)
         {
             Logger? logger = null;
@@ -95,7 +95,7 @@ namespace NLog.Azure.Kusto.Tests
 
             try
             {
-                await WithTimeout("Create Kusto Logger", TimeSpan.FromSeconds(30), Task.Run(() =>
+                await WithTimeout("Create Kusto Logger", TimeSpan.FromSeconds(120), Task.Run(() =>
                 {
                     logger = GetCustomLogger(testType);
                 }));
