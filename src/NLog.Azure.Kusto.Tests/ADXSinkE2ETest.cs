@@ -25,9 +25,11 @@ namespace NLog.Azure.Kusto.Tests
             string dmConnectionStringEndpoint = connectionString.Contains("ingest-") ? connectionString : connectionString.ReplaceFirstOccurrence("://", "://ingest-");
             string engineConnectionStringEndpoint = !connectionString.Contains("ingest-") ? connectionString : connectionString.ReplaceFirstOccurrence("ingest-", "");
 
-            m_kustoConnectionStringBuilder = new KustoConnectionStringBuilder(engineConnectionStringEndpoint).WithAadAzCliAuthentication();
+            var accessToken = Environment.GetEnvironmentVariable("ACCESS_TOKEN") ?? throw new ArgumentNullException("ACCESS_TOKEN not set");
+
+            m_kustoConnectionStringBuilder = new KustoConnectionStringBuilder(engineConnectionStringEndpoint).WithAadAccessToken(accessToken);
             m_kustoConnectionStringBuilder.UserNameForTracing = "NLogE2ETest";
-            m_kustoConnectionStringBuilderDM = new KustoConnectionStringBuilder(dmConnectionStringEndpoint).WithAadAzCliAuthentication();
+            m_kustoConnectionStringBuilderDM = new KustoConnectionStringBuilder(dmConnectionStringEndpoint).WithAadAccessToken(accessToken);
             m_kustoConnectionStringBuilderDM.UserNameForTracing = "NLogE2ETest";
 
             var createTableCommand = CslCommandGenerator.GenerateTableCreateCommand(m_generatedTableName,
@@ -170,7 +172,7 @@ namespace NLog.Azure.Kusto.Tests
                             TableName = m_generatedTableName,
                             UseStreamingIngestion = "false",
                             FlushImmediately = "true",
-                            AzCliAuth = "true"
+                            AccessToken = Environment.GetEnvironmentVariable("ACCESS_TOKEN") ?? throw new ArgumentNullException("ACCESS_TOKEN not set")
                         };
                         var config = new LoggingConfiguration();
                         config.AddRuleForAllLevels(target);
@@ -186,7 +188,7 @@ namespace NLog.Azure.Kusto.Tests
                             Database = Environment.GetEnvironmentVariable("DATABASE") ?? throw new ArgumentNullException("DATABASE name not set"),
                             TableName = m_generatedTableName,
                             UseStreamingIngestion = "true",
-                            AzCliAuth = "true"
+                            AccessToken = Environment.GetEnvironmentVariable("ACCESS_TOKEN") ?? throw new ArgumentNullException("ACCESS_TOKEN not set")
                         };
                         var config = new LoggingConfiguration();
                         config.AddRuleForAllLevels(target);

@@ -43,6 +43,9 @@ namespace NLog.Azure.Kusto
         /// <inheritdoc cref="ADXTarget.ApplicationVersion"/>
         public string ApplicationVersion { get; set; }
 
+        /// <inheritdoc cref="ADXTarget.AccessToken"/>
+        public string AccessToken { get; set; }
+
         public KustoConnectionStringBuilder GetIngestKcsb()
         {
             // The connection string in most circumstances will not be an ingest endpoint. Just adding a double check on this.
@@ -77,6 +80,9 @@ namespace NLog.Azure.Kusto
                     break;
                 case AuthenticationType.AddAzCli:
                     kcsb = kcsb.WithAadAzCliAuthentication();
+                    break;
+                case AuthenticationType.AadAccessToken:
+                    kcsb = kcsb.WithAadAccessToken(AccessToken);
                     break;
             }
 

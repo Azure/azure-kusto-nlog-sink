@@ -95,6 +95,11 @@ namespace NLog.Azure.Kusto
         /// Overrider default authentication-mode
         /// </summary>
         public Layout<AuthenticationType> AuthenticationType { get; set; } = NLog.Azure.Kusto.AuthenticationType.None;
+        /// <summary>
+        /// Pre-acquired AAD access token for Kusto authentication.
+        /// Note: access tokens expire (typically ~1 hour) and are not auto-refreshed by the SDK.
+        /// </summary>
+        public Layout AccessToken { get; set; }
 
         public ADXTarget()
         {
@@ -120,7 +125,13 @@ namespace NLog.Azure.Kusto
                 FlushImmediately = bool.Parse(RenderLogEvent(FlushImmediately, defaultLogEvent).NullIfEmpty() ?? "false"),
                 ApplicationName = RenderLogEvent(ApplicationName, defaultLogEvent).NullIfEmpty(),
                 ApplicationVersion = RenderLogEvent(ApplicationVersion, defaultLogEvent).NullIfEmpty(),
+                AccessToken = RenderLogEvent(AccessToken, defaultLogEvent).NullIfEmpty(),
             };
+
+            if (!string.IsNullOrEmpty(options.AccessToken) && options.AuthenticationType == NLog.Azure.Kusto.AuthenticationType.None)
+            {
+                options.AuthenticationType = NLog.Azure.Kusto.AuthenticationType.AadAccessToken;
+            }
 
             m_streamingIngestion = options.UseStreamingIngestion;
             m_ingestionMapping = new IngestionMapping();

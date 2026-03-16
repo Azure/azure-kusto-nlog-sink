@@ -27,5 +27,16 @@ namespace NLog.Azure.Kusto.Tests
         {
             Assert.Throws<NLog.NLogConfigurationException>(() => GetTarget("adxtargeterror"));
         }
+
+        [Fact]
+        public void Test_AccessTokenConfigLoads()
+        {
+            var target = GetTarget("adxtargetaccesstoken");
+
+            Assert.Equal("Data Source=https://somecluster.eastus.dev.kusto.windows.net/;Database=NetDefaultDB;Fed=True", target.ConnectionString.ToString());
+            Assert.Equal("ADXNlog", target.TableName);
+            Assert.Equal("testdb", target.Database);
+            Assert.Equal("test-access-token-value", target.AccessToken?.ToString());
+        }
     }
 }

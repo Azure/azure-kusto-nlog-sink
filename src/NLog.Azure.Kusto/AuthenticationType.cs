@@ -35,5 +35,9 @@ namespace NLog.Azure.Kusto
         /// Azure CLI Authentication
         /// </summary>
         AddAzCli = 5,
+        /// <summary>
+        /// Use a pre-acquired AAD access token. Note: tokens expire (typically ~1 hour) and are not auto-refreshed.
+        /// </summary>
+        AadAccessToken = 6,
     }
 }
