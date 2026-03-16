@@ -18,6 +18,9 @@ namespace NLog.Azure.Kusto.Tests
 
         public ADXSinkE2ETest()
         {
+            Environment.SetEnvironmentVariable("CONNECTION_STRING", "https://sdktestcluster.southeastasia.dev.kusto.windows.net;Database=e2e");
+            Environment.SetEnvironmentVariable("DATABASE", "e2e");
+
             var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? throw new ArgumentNullException("CONNECTION_STRING not set");
             var database = Environment.GetEnvironmentVariable("DATABASE") ?? throw new ArgumentNullException("DATABASE name not set");
 
@@ -80,11 +83,12 @@ namespace NLog.Azure.Kusto.Tests
         {
             if (await Task.WhenAny(task, Task.Delay(timeout)) != task)
                 throw new TimeoutException(operationName);
+            await task; // Observe any exception from the completed task
         }
 
         [Theory]
         [InlineData("Test_ADXTargetStreamed", 10, 12, 5)]
-        [InlineData("Test_ADXNTargetBatched", 10, 12, 5)]
+        [InlineData("Test_ADXNTargetBatched", 10, 24, 10)]
         public async Task Test_LogMessage(string testType, int numberOfLogs, int retries, int delayTimeSecs)
         {
             Logger? logger = null;
@@ -108,6 +112,8 @@ namespace NLog.Azure.Kusto.Tests
                     logger.Debug("{type} Processed debug Log {i}", testType, i);
                     logger.Error(new Exception("{" + testType + "} : This is E2E Exception."));
                 }
+
+                LogManager.Flush(TimeSpan.FromSeconds(180));
 
                 await WithTimeout("Verify Kusto Logger", TimeSpan.FromSeconds(retries * delayTimeSecs + 120), Task.Run(async () =>
                 {
@@ -197,19 +203,26 @@ namespace NLog.Azure.Kusto.Tests
 
         public void Dispose()
         {
-            WithTimeout("Dispose Kusto", TimeSpan.FromSeconds(120), Task.Run(() =>
+            try
             {
-                using (var queryProvider = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder))
+                WithTimeout("Dispose Kusto", TimeSpan.FromSeconds(120), Task.Run(() =>
                 {
-                    var command = CslCommandGenerator.GenerateTableDropCommand(m_generatedTableName);
-                    var clientRequestProperties = new ClientRequestProperties()
+                    using (var queryProvider = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder))
                     {
-                        ClientRequestId = Guid.NewGuid().ToString()
-                    };
-                    queryProvider.ExecuteControlCommand(Environment.GetEnvironmentVariable("DATABASE"), command,
-                        clientRequestProperties);
-                }
-            })).Wait();
+                        var command = CslCommandGenerator.GenerateTableDropCommand(m_generatedTableName);
+                        var clientRequestProperties = new ClientRequestProperties()
+                        {
+                            ClientRequestId = Guid.NewGuid().ToString()
+                        };
+                        queryProvider.ExecuteControlCommand(Environment.GetEnvironmentVariable("DATABASE"), command,
+                            clientRequestProperties);
+                    }
+                })).Wait();
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Warning: Test cleanup failed for table {m_generatedTableName}: {ex.Message}");
+            }
         }
     }
 }

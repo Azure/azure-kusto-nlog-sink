@@ -100,7 +100,8 @@ namespace NLog.Azure.Kusto
         {
             Layout = "${logger}|${message}";
             IncludeEventProperties = true;
-            RetryDelayMilliseconds = 50;    // Overwrite the default of 500ms
+            RetryCount = 5;
+            RetryDelayMilliseconds = 3000;
         }
 
         protected override void InitializeTarget()
@@ -180,6 +181,11 @@ namespace NLog.Azure.Kusto
                     NLog.Common.InternalLogger.Error(ex, "{0}: Permanent ingestion failure to Kusto", this);
                     return; // Swallow exception to avoid retry
                 }
+                throw;
+            }
+            catch (global::Kusto.Cloud.Platform.Utils.UtilsTimeoutException ex)
+            {
+                NLog.Common.InternalLogger.Warn(ex, "{0}: Transient timeout while acquiring Kusto ingestion resources. Retrying.", this);
                 throw;
             }
         }
