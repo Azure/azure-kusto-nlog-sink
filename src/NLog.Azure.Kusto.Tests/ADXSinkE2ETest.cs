@@ -18,9 +18,6 @@ namespace NLog.Azure.Kusto.Tests
 
         public ADXSinkE2ETest()
         {
-            Environment.SetEnvironmentVariable("CONNECTION_STRING", "https://sdktestcluster.southeastasia.dev.kusto.windows.net;Database=e2e");
-            Environment.SetEnvironmentVariable("DATABASE", "e2e");
-
             var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? throw new ArgumentNullException("CONNECTION_STRING not set");
             var database = Environment.GetEnvironmentVariable("DATABASE") ?? throw new ArgumentNullException("DATABASE name not set");
 
