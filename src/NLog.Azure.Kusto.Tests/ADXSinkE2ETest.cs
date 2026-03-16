@@ -27,9 +27,9 @@ namespace NLog.Azure.Kusto.Tests
 
             var accessToken = Environment.GetEnvironmentVariable("ACCESS_TOKEN") ?? throw new ArgumentNullException("ACCESS_TOKEN not set");
 
-            m_kustoConnectionStringBuilder = new KustoConnectionStringBuilder(engineConnectionStringEndpoint).WithAadAccessToken(accessToken);
+            m_kustoConnectionStringBuilder = new KustoConnectionStringBuilder(engineConnectionStringEndpoint).WithAadUserTokenAuthentication(accessToken);
             m_kustoConnectionStringBuilder.UserNameForTracing = "NLogE2ETest";
-            m_kustoConnectionStringBuilderDM = new KustoConnectionStringBuilder(dmConnectionStringEndpoint).WithAadAccessToken(accessToken);
+            m_kustoConnectionStringBuilderDM = new KustoConnectionStringBuilder(dmConnectionStringEndpoint).WithAadUserTokenAuthentication(accessToken);
             m_kustoConnectionStringBuilderDM.UserNameForTracing = "NLogE2ETest";
 
             var createTableCommand = CslCommandGenerator.GenerateTableCreateCommand(m_generatedTableName,

@@ -82,7 +82,7 @@ namespace NLog.Azure.Kusto
                     kcsb = kcsb.WithAadAzCliAuthentication();
                     break;
                 case AuthenticationType.AadAccessToken:
-                    kcsb = kcsb.WithAadAccessToken(AccessToken);
+                    kcsb = kcsb.WithAadUserTokenAuthentication(AccessToken);
                     break;
             }
 
