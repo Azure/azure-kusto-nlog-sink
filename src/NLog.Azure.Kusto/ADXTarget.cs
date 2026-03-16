@@ -178,6 +178,11 @@ namespace NLog.Azure.Kusto
                 }
                 throw;
             }
+            catch (global::Kusto.Cloud.Platform.Utils.UtilsTimeoutException ex)
+            {
+                NLog.Common.InternalLogger.Warn(ex, "{0}: Transient timeout from Kusto ingestion resource cache.", this);
+                throw;
+            }
         }
 
         protected override Task WriteAsyncTask(LogEventInfo logEvent, CancellationToken cancellationToken)
