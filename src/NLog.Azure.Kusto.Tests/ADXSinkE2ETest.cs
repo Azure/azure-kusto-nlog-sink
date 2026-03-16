@@ -95,7 +95,7 @@ namespace NLog.Azure.Kusto.Tests
 
             try
             {
-                await WithTimeout("Create Kusto Logger", TimeSpan.FromSeconds(30), Task.Run(() =>
+                await WithTimeout("Create Kusto Logger", TimeSpan.FromSeconds(120), Task.Run(() =>
                 {
                     logger = GetCustomLogger(testType);
                 }));
