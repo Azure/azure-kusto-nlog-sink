@@ -85,8 +85,8 @@ namespace NLog.Azure.Kusto.Tests
                 }));
             })).Wait();
 
-            // Allow time for table metadata to propagate to streaming ingestion endpoints
-            Thread.Sleep(TimeSpan.FromSeconds(10));
+            // Wait for table metadata to propagate to the streaming ingestion cache
+            Thread.Sleep(TimeSpan.FromSeconds(60));
         }
 
         private static async Task WithTimeout(string operationName, TimeSpan timeout, Task task)
@@ -97,7 +97,7 @@ namespace NLog.Azure.Kusto.Tests
         }
 
         [Theory]
-        [InlineData("Test_ADXTargetStreamed", 10, 12, 5)]
+        [InlineData("Test_ADXTargetStreamed", 10, 24, 10)]
         [InlineData("Test_ADXNTargetBatched", 10, 24, 10)]
         public async Task Test_LogMessage(string testType, int numberOfLogs, int retries, int delayTimeSecs)
         {
