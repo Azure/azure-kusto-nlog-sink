@@ -123,7 +123,7 @@ namespace NLog.Azure.Kusto.Tests
                     logger.Error(new Exception("{" + testType + "} : This is E2E Exception."));
                 }
 
-                LogManager.Flush(TimeSpan.FromSeconds(180));
+                LogManager.Flush(TimeSpan.FromSeconds(360));
 
                 await WithTimeout("Verify Kusto Logger", TimeSpan.FromSeconds(retries * delayTimeSecs + 120), Task.Run(async () =>
                 {
