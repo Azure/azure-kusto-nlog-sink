@@ -105,7 +105,8 @@ namespace NLog.Azure.Kusto
         {
             Layout = "${logger}|${message}";
             IncludeEventProperties = true;
-            RetryDelayMilliseconds = 50;    // Overwrite the default of 500ms
+            RetryCount = 5;
+            RetryDelayMilliseconds = 3000;
         }
 
         protected override void InitializeTarget()
