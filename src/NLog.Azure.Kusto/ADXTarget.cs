@@ -92,7 +92,7 @@ namespace NLog.Azure.Kusto
         /// </summary>
         public string MappingNameRef { get; set; }
         /// <summary>
-        /// Overrider default authentication-mode
+        /// Override default authentication-mode
         /// </summary>
         public Layout<AuthenticationType> AuthenticationType { get; set; } = NLog.Azure.Kusto.AuthenticationType.None;
 

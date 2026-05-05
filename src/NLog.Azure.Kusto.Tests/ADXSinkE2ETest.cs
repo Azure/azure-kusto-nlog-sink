@@ -25,9 +25,9 @@ namespace NLog.Azure.Kusto.Tests
             string dmConnectionStringEndpoint = connectionString.Contains("ingest-") ? connectionString : connectionString.ReplaceFirstOccurrence("://", "://ingest-");
             string engineConnectionStringEndpoint = !connectionString.Contains("ingest-") ? connectionString : connectionString.ReplaceFirstOccurrence("ingest-", "");
 
-            m_kustoConnectionStringBuilder = new KustoConnectionStringBuilder(engineConnectionStringEndpoint);
+            m_kustoConnectionStringBuilder = new KustoConnectionStringBuilder(engineConnectionStringEndpoint).WithAadAzCliAuthentication();
             m_kustoConnectionStringBuilder.UserNameForTracing = "NLogE2ETest";
-            m_kustoConnectionStringBuilderDM = new KustoConnectionStringBuilder(dmConnectionStringEndpoint);
+            m_kustoConnectionStringBuilderDM = new KustoConnectionStringBuilder(dmConnectionStringEndpoint).WithAadAzCliAuthentication();
             m_kustoConnectionStringBuilderDM.UserNameForTracing = "NLogE2ETest";
 
             var createTableCommand = CslCommandGenerator.GenerateTableCreateCommand(m_generatedTableName,
@@ -74,17 +74,21 @@ namespace NLog.Azure.Kusto.Tests
                     kustoClientDM.ExecuteControlCommand(database, ".refresh database '" + database + "' table '" + m_generatedTableName + "' cache ingestionbatchingpolicy");
                 }));
             })).Wait();
+
+            // Wait for table metadata to propagate to the streaming ingestion cache
+            Thread.Sleep(TimeSpan.FromSeconds(60));
         }
 
         private static async Task WithTimeout(string operationName, TimeSpan timeout, Task task)
         {
             if (await Task.WhenAny(task, Task.Delay(timeout)) != task)
                 throw new TimeoutException(operationName);
+            await task; // Observe any exception from the completed task
         }
 
         [Theory]
-        [InlineData("Test_ADXTargetStreamed", 10, 12, 5)]
-        [InlineData("Test_ADXNTargetBatched", 10, 12, 5)]
+        [InlineData("Test_ADXTargetStreamed", 10, 24, 10)]
+        [InlineData("Test_ADXNTargetBatched", 10, 24, 10)]
         public async Task Test_LogMessage(string testType, int numberOfLogs, int retries, int delayTimeSecs)
         {
             Logger? logger = null;
@@ -108,6 +112,8 @@ namespace NLog.Azure.Kusto.Tests
                     logger.Debug("{type} Processed debug Log {i}", testType, i);
                     logger.Error(new Exception("{" + testType + "} : This is E2E Exception."));
                 }
+
+                LogManager.Flush(TimeSpan.FromSeconds(360));
 
                 await WithTimeout("Verify Kusto Logger", TimeSpan.FromSeconds(retries * delayTimeSecs + 120), Task.Run(async () =>
                 {
@@ -166,8 +172,9 @@ namespace NLog.Azure.Kusto.Tests
                             Database = Environment.GetEnvironmentVariable("DATABASE") ?? throw new ArgumentNullException("DATABASE name not set"),
                             TableName = m_generatedTableName,
                             UseStreamingIngestion = "false",
-                            FlushImmediately = "true"
+                            FlushImmediately = "true",
                         };
+                        target.AzCliAuth = "true";
                         var config = new LoggingConfiguration();
                         config.AddRuleForAllLevels(target);
                         LogManager.Configuration = config;
@@ -181,8 +188,9 @@ namespace NLog.Azure.Kusto.Tests
                             ConnectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? throw new ArgumentNullException("CONNECTION_STRING not set"),
                             Database = Environment.GetEnvironmentVariable("DATABASE") ?? throw new ArgumentNullException("DATABASE name not set"),
                             TableName = m_generatedTableName,
-                            UseStreamingIngestion = "true"
+                            UseStreamingIngestion = "true",
                         };
+                        target.AzCliAuth = "true";
                         var config = new LoggingConfiguration();
                         config.AddRuleForAllLevels(target);
                         LogManager.Configuration = config;
@@ -197,19 +205,26 @@ namespace NLog.Azure.Kusto.Tests
 
         public void Dispose()
         {
-            WithTimeout("Dispose Kusto", TimeSpan.FromSeconds(120), Task.Run(() =>
+            try
             {
-                using (var queryProvider = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder))
+                WithTimeout("Dispose Kusto", TimeSpan.FromSeconds(120), Task.Run(() =>
                 {
-                    var command = CslCommandGenerator.GenerateTableDropCommand(m_generatedTableName);
-                    var clientRequestProperties = new ClientRequestProperties()
+                    using (var queryProvider = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder))
                     {
-                        ClientRequestId = Guid.NewGuid().ToString()
-                    };
-                    queryProvider.ExecuteControlCommand(Environment.GetEnvironmentVariable("DATABASE"), command,
-                        clientRequestProperties);
-                }
-            })).Wait();
+                        var command = CslCommandGenerator.GenerateTableDropCommand(m_generatedTableName);
+                        var clientRequestProperties = new ClientRequestProperties()
+                        {
+                            ClientRequestId = Guid.NewGuid().ToString()
+                        };
+                        queryProvider.ExecuteControlCommand(Environment.GetEnvironmentVariable("DATABASE"), command,
+                            clientRequestProperties);
+                    }
+                })).Wait();
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Warning: Test cleanup failed for table {m_generatedTableName}: {ex.Message}");
+            }
         }
     }
 }
