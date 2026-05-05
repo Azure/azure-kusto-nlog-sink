@@ -75,8 +75,27 @@ namespace NLog.Azure.Kusto.Tests
                 }));
             })).Wait();
 
-            // Wait for table metadata to propagate to the streaming ingestion cache
-            Thread.Sleep(TimeSpan.FromSeconds(60));
+            // Poll until streaming ingestion policy is confirmed active on the table (max 90s)
+            WithTimeout("Wait for streaming policy", TimeSpan.FromSeconds(90), Task.Run(async () =>
+            {
+                using var kustoClient = KustoClientFactory.CreateCslAdminProvider(m_kustoConnectionStringBuilder);
+                while (true)
+                {
+                    try
+                    {
+                        using var reader = kustoClient.ExecuteControlCommand(database,
+                            $".show table {m_generatedTableName} policy streamingingestion");
+                        if (reader.Read())
+                        {
+                            var policyStr = reader["Policy"]?.ToString() ?? "";
+                            if (policyStr.Contains("true", StringComparison.OrdinalIgnoreCase))
+                                return;
+                        }
+                    }
+                    catch { }
+                    await Task.Delay(TimeSpan.FromSeconds(5));
+                }
+            })).Wait();
         }
 
         private static async Task WithTimeout(string operationName, TimeSpan timeout, Task task)
