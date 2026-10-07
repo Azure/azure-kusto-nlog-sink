@@ -1,5 +1,3 @@
-# Temporary Azure Pipelines bootstrap for .github/workflows/dotnet.yml
-
 trigger:
 - main
 
@@ -9,6 +7,46 @@ pr:
 pool:
   vmImage: ubuntu-latest
 
-steps:
-- script: echo "Hello from Azure Pipelines"
-  displayName: Hello world
+variables:
+- group: azure-kusto-nlog-sink-e2e
+
+jobs:
+- job: BuildAndTest
+  displayName: Build and test
+  timeoutInMinutes: 60
+  steps:
+  - checkout: self
+
+  - task: UseDotNet@2
+    displayName: Use .NET 8
+    inputs:
+      packageType: sdk
+      version: 8.0.x
+
+  - script: dotnet restore src
+    displayName: Restore dependencies
+
+  - script: dotnet build -c Release src --no-restore
+    displayName: Build
+
+  - task: AzureCLI@2
+    displayName: Run tests
+    inputs:
+      azureSubscription: kusto-connectors-arm-sc
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        for attempt in 1 2 3; do
+          if timeout 10m dotnet test src -c Release --no-build --verbosity normal; then
+            exit 0
+          fi
+
+          if [ "$attempt" -eq 3 ]; then
+            exit 1
+          fi
+
+          echo "Test attempt $attempt failed; retrying."
+        done
+    env:
+      CONNECTION_STRING: $(CONNECTION_STRING)
+      DATABASE: $(DATABASE)
